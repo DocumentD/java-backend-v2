@@ -50,20 +50,20 @@ public class MeliSearch {
     public SearchResponse searchForTopDocumentsInUserScope(String userid) {
         //TODO Evt. unsorted Files
         HttpResponse<SearchResponse> request = Unirest.post(hostUrl + "/indexes/{index_uid}/search")
-                .body(String.format("{\"facetFilters\":[\"userid:%s\"],\"limit\":20}", userid))
+                .body(String.format("{\"facetFilters\":[\"userid:%s\"],\"limit\":20,\"matches\":true}", userid))
                 .routeParam("index_uid", documentIndexName)
                 .header("X-Meili-API-Key", privateApiKey)
                 .asObject(SearchResponse.class);
-        return handleSearchResponse(request);
+        return request.getBody();
     }
 
     public SearchResponse searchForDocumentInUserScope(String userid, String searchQuery) {
         HttpResponse<SearchResponse> request = Unirest.post(hostUrl + "/indexes/{index_uid}/search")
-                .body(String.format("{\"q\":\"%s\",\"facetFilters\":[\"userid:%s\"]}", searchQuery, userid))
+                .body(String.format("{\"q\":\"%s\",\"facetFilters\":[\"userid:%s\"],\"matches\":true}", searchQuery, userid))
                 .routeParam("index_uid", documentIndexName)
                 .header("X-Meili-API-Key", privateApiKey)
                 .asObject(SearchResponse.class);
-        return handleSearchResponse(request);
+        return request.getBody();
     }
 
     public SearchResponse getDocumentsWithCompanyFilterInUserScope(String userid, String company) {
@@ -72,7 +72,7 @@ public class MeliSearch {
                 .routeParam("index_uid", documentIndexName)
                 .header("X-Meili-API-Key", privateApiKey)
                 .asObject(SearchResponse.class);
-        return handleSearchResponse(request);
+        return handleSearchResponseAndTransFormHitsToDocuments(request);
     }
 
     public SearchResponse getDocumentsWithCategoryFilterInUserScope(String userid, String company) {
@@ -81,7 +81,7 @@ public class MeliSearch {
                 .routeParam("index_uid", documentIndexName)
                 .header("X-Meili-API-Key", privateApiKey)
                 .asObject(SearchResponse.class);
-        return handleSearchResponse(request);
+        return handleSearchResponseAndTransFormHitsToDocuments(request);
     }
 
     public Optional<User> searchUserByUsername(String username) {
@@ -200,7 +200,7 @@ public class MeliSearch {
                 .asEmptyAsync();
     }
 
-    private SearchResponse handleSearchResponse(HttpResponse<SearchResponse> request) {
+    private SearchResponse handleSearchResponseAndTransFormHitsToDocuments(HttpResponse<SearchResponse> request) {
         SearchResponse searchResponse = request.getBody();
         List<Object> hits = searchResponse.getHits();
         List<Object> userHits = new LinkedList<>();

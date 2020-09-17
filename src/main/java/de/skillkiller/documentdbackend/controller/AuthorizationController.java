@@ -1,8 +1,10 @@
 package de.skillkiller.documentdbackend.controller;
 
+import com.auth0.jwt.interfaces.DecodedJWT;
 import de.skillkiller.documentdbackend.entity.User;
 import de.skillkiller.documentdbackend.entity.UserDetailsHolder;
 import de.skillkiller.documentdbackend.entity.http.AuthenticationRequest;
+import de.skillkiller.documentdbackend.entity.http.AuthenticationWithTokenRequest;
 import de.skillkiller.documentdbackend.search.MeliSearch;
 import de.skillkiller.documentdbackend.util.JWTUtil;
 import org.slf4j.Logger;
@@ -14,19 +16,22 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
+import java.util.Optional;
+
 @RestController
 @CrossOrigin(exposedHeaders = {"token"}, methods = {RequestMethod.POST, RequestMethod.GET}, origins = {"*"})
 public class AuthorizationController {
     private static final Logger logger = LoggerFactory.getLogger(AuthorizationController.class);
 
-    private final MeliSearch meliSearch;
     private final JWTUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
+    private final MeliSearch meliSearch;
 
-    public AuthorizationController(MeliSearch meliSearch, JWTUtil jwtUtil, AuthenticationManager authenticationManager) {
-        this.meliSearch = meliSearch;
+    public AuthorizationController(JWTUtil jwtUtil, AuthenticationManager authenticationManager, MeliSearch meliSearch) {
         this.jwtUtil = jwtUtil;
         this.authenticationManager = authenticationManager;
+        this.meliSearch = meliSearch;
     }
 
     @PostMapping(value = "/login")
@@ -42,5 +47,26 @@ public class AuthorizationController {
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(403).build();
         }
+    }
+
+    @PostMapping(value = "/loginwithtoken")
+    public ResponseEntity<User> loginWithToken(@RequestBody AuthenticationWithTokenRequest authenticationWithTokenRequest) {
+        logger.debug("Received Login Request");
+        DecodedJWT decodedJWT = jwtUtil.validateToken(authenticationWithTokenRequest.getToken());
+        if (decodedJWT != null) {
+            String userid = decodedJWT.getSubject();
+            if (userid != null) {
+                Optional<User> optionalUser = meliSearch.getUserById(userid);
+
+                if (optionalUser.isPresent()) {
+                    User user = optionalUser.get();
+                    if (user.getModifyDate().before(decodedJWT.getIssuedAt()) && decodedJWT.getExpiresAt().after(new Date())) {
+                        return ResponseEntity.ok(user);
+                    }
+                }
+            }
+        }
+
+        return ResponseEntity.status(401).build();
     }
 }

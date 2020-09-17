@@ -48,17 +48,17 @@ public class DocumentController {
     }
 
     @GetMapping("gettop")
-    public List<?> getTopDocuments(Authentication authentication) {
+    public SearchResponse getTopDocuments(Authentication authentication) {
         User authenticatedUser = ((UserDetailsHolder) authentication.getPrincipal()).getAuthenticatedUser();
-        SearchResponse searchResponse = meliSearch.searchForTopDocumentsInUserScope(authenticatedUser.getId());
-        return searchResponse.getHits();
+        return meliSearch.searchForTopDocumentsInUserScope(authenticatedUser.getId());
     }
 
     @GetMapping("search")
-    public List<?> searchForDocuments(Authentication authentication, @RequestParam("search") String search) {
+    public SearchResponse searchForDocuments(Authentication authentication, @RequestParam("search") String search) {
         User authenticatedUser = ((UserDetailsHolder) authentication.getPrincipal()).getAuthenticatedUser();
-        SearchResponse searchResponse = meliSearch.searchForDocumentInUserScope(authenticatedUser.getId(), search);
-        return searchResponse.getHits();
+        if (search.equals("")) return getTopDocuments(authentication);
+        System.out.println("search = " + search);
+        return meliSearch.searchForDocumentInUserScope(authenticatedUser.getId(), search);
     }
 
     @RequestMapping(value = "/upload", method = RequestMethod.POST)
