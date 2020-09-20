@@ -48,9 +48,13 @@ public class MeliSearch {
     }
 
     public SearchResponse searchForTopDocumentsInUserScope(String userid) {
+        return searchForTopDocumentsInUserScope(userid, 0, 20);
+    }
+
+    public SearchResponse searchForTopDocumentsInUserScope(String userid, int offset, int limit) {
         //TODO Evt. unsorted Files
         HttpResponse<SearchResponse> request = Unirest.post(hostUrl + "/indexes/{index_uid}/search")
-                .body(String.format("{\"facetFilters\":[\"userid:%s\"],\"limit\":20,\"matches\":true}", userid))
+                .body(String.format("{\"facetFilters\":[\"userid:%s\"],\"offset\":%s,\"limit\":%s,\"matches\":true}", userid, offset, limit))
                 .routeParam("index_uid", documentIndexName)
                 .header("X-Meili-API-Key", privateApiKey)
                 .asObject(SearchResponse.class);
@@ -58,8 +62,12 @@ public class MeliSearch {
     }
 
     public SearchResponse searchForDocumentInUserScope(String userid, String searchQuery) {
+        return searchForDocumentInUserScope(userid, searchQuery, 0, 20);
+    }
+
+    public SearchResponse searchForDocumentInUserScope(String userid, String searchQuery, int offset, int limit) {
         HttpResponse<SearchResponse> request = Unirest.post(hostUrl + "/indexes/{index_uid}/search")
-                .body(String.format("{\"q\":\"%s\",\"facetFilters\":[\"userid:%s\"],\"matches\":true}", searchQuery, userid))
+                .body(String.format("{\"q\":\"%s\",\"facetFilters\":[\"userid:%s\"],\"offset\":%s,\"limit\":%s,\"matches\":true}", searchQuery, userid, offset, limit))
                 .routeParam("index_uid", documentIndexName)
                 .header("X-Meili-API-Key", privateApiKey)
                 .asObject(SearchResponse.class);

@@ -47,18 +47,15 @@ public class DocumentController {
         this.accessTokenService = accessTokenService;
     }
 
-    @GetMapping("gettop")
-    public SearchResponse getTopDocuments(Authentication authentication) {
-        User authenticatedUser = ((UserDetailsHolder) authentication.getPrincipal()).getAuthenticatedUser();
-        return meliSearch.searchForTopDocumentsInUserScope(authenticatedUser.getId());
-    }
-
     @GetMapping("search")
-    public SearchResponse searchForDocuments(Authentication authentication, @RequestParam("search") String search) {
+    public SearchResponse searchForDocuments(Authentication authentication, @RequestParam("search") String search,
+                                             @RequestParam int pageNumber, @RequestParam int pageSize) {
         User authenticatedUser = ((UserDetailsHolder) authentication.getPrincipal()).getAuthenticatedUser();
-        if (search.equals("")) return getTopDocuments(authentication);
-        System.out.println("search = " + search);
-        return meliSearch.searchForDocumentInUserScope(authenticatedUser.getId(), search);
+        int offset = pageNumber * pageSize;
+        if (search.equals("")) {
+            return meliSearch.searchForTopDocumentsInUserScope(authenticatedUser.getId(), offset, pageSize);
+        }
+        return meliSearch.searchForDocumentInUserScope(authenticatedUser.getId(), search, offset, pageSize);
     }
 
     @RequestMapping(value = "/upload", method = RequestMethod.POST)
