@@ -1,5 +1,6 @@
 package de.skillkiller.documentdbackend.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
@@ -17,9 +18,11 @@ public class Document {
     private String title;
 
     @JsonProperty("documentdate")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd", timezone = "Europe/Berlin")
     private Date documentDate;
 
     @JsonProperty("deletedate")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd", timezone = "Europe/Berlin")
     private Date deleteDate;
 
     @JsonProperty
