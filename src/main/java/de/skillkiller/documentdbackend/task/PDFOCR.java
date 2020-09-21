@@ -22,11 +22,15 @@ public class PDFOCR implements Runnable {
     private final String documentId;
     private final MeliSearch meliSearch;
     private final FileUtil fileUtil;
+    private final String dataPath;
+    private final String language;
 
-    public PDFOCR(String documentId, MeliSearch meliSearch, FileUtil fileUtil) {
+    public PDFOCR(String documentId, MeliSearch meliSearch, FileUtil fileUtil, String dataPath, String language) {
         this.documentId = documentId;
         this.meliSearch = meliSearch;
         this.fileUtil = fileUtil;
+        this.dataPath = dataPath;
+        this.language = language;
     }
 
     @Override
@@ -44,9 +48,8 @@ public class PDFOCR implements Runnable {
 
                 PDFRenderer pr = new PDFRenderer(pdfDocument);
                 Tesseract tesseract = new Tesseract();
-                tesseract.setLanguage("deu");
-                tesseract.setDatapath("D:\\tessdata_best-master"); //TODO Auslagern
-
+                tesseract.setLanguage(language);
+                tesseract.setDatapath(dataPath);
                 StringBuilder stringBuilder = new StringBuilder();
 
                 for (int i = 0; i < pdfDocument.getNumberOfPages(); i++) {
