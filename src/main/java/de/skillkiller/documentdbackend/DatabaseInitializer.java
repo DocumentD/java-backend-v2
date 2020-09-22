@@ -17,19 +17,19 @@ import org.springframework.stereotype.Component;
 import java.util.Date;
 
 @Component
-public class ReadyListener {
+public class DatabaseInitializer {
 
     private final MeiliSearch meiliSearch;
     private final ObjectMapper objectMapper;
     private final PasswordEncoder passwordEncoder;
-    private static final Logger logger = LoggerFactory.getLogger(ReadyListener.class);
+    private static final Logger logger = LoggerFactory.getLogger(DatabaseInitializer.class);
 
     private final String firstUserUsername;
     private final String firstUserPassword;
 
-    public ReadyListener(MeiliSearch meiliSearch, ObjectMapper objectMapper, PasswordEncoder passwordEncoder,
-                         @Value("${firstuser.username:admin}") String firstUserUsername,
-                         @Value("${firstuser.password:${random.value}}") String firstUserPassword) {
+    public DatabaseInitializer(MeiliSearch meiliSearch, ObjectMapper objectMapper, PasswordEncoder passwordEncoder,
+                               @Value("${firstuser.username:admin}") String firstUserUsername,
+                               @Value("${firstuser.password:${random.value}}") String firstUserPassword) {
         this.meiliSearch = meiliSearch;
         this.objectMapper = objectMapper;
         this.passwordEncoder = passwordEncoder;
