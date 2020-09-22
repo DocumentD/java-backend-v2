@@ -19,14 +19,14 @@ import java.util.Optional;
 public class PDFOCR implements Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger(PDFOCR.class);
-    private final String documentId;
+    private final Document document;
     private final MeliSearch meliSearch;
     private final FileUtil fileUtil;
     private final String dataPath;
     private final String language;
 
-    public PDFOCR(String documentId, MeliSearch meliSearch, FileUtil fileUtil, String dataPath, String language) {
-        this.documentId = documentId;
+    public PDFOCR(Document document, MeliSearch meliSearch, FileUtil fileUtil, String dataPath, String language) {
+        this.document = document;
         this.meliSearch = meliSearch;
         this.fileUtil = fileUtil;
         this.dataPath = dataPath;
@@ -35,47 +35,42 @@ public class PDFOCR implements Runnable {
 
     @Override
     public void run() {
-        Thread.currentThread().setName("PDFOCR-" + documentId);
-        logger.info("Start PDF OCR for document " + documentId);
-        Optional<Document> optionalDocument = meliSearch.getDocumentById(documentId);
-        if (optionalDocument.isPresent()) {
-            if (optionalDocument.get().getTextContent() != null) {
-                logger.warn("Document " + documentId + " already have text content! This task override it!");
-            }
-            File targetFile = fileUtil.getFile(optionalDocument.get());
-
-            try (PDDocument pdfDocument = PDDocument.load(targetFile)) {
-
-                PDFRenderer pr = new PDFRenderer(pdfDocument);
-                Tesseract tesseract = new Tesseract();
-                tesseract.setLanguage(language);
-                tesseract.setDatapath(dataPath);
-                StringBuilder stringBuilder = new StringBuilder();
-
-                for (int i = 0; i < pdfDocument.getNumberOfPages(); i++) {
-                    BufferedImage bi = pr.renderImageWithDPI(i, 600);
-                    stringBuilder.append(tesseract.doOCR(bi)).append("\n");
-                }
-
-                String content = stringBuilder.toString();
-
-                optionalDocument = meliSearch.getDocumentById(documentId);
-                if (optionalDocument.isPresent()) {
-                    Document document = optionalDocument.get();
-                    if (!content.isBlank()) {
-                        document.setTextContent(content);
-                        meliSearch.createOrReplaceDocument(document);
-                        logger.info("Updated document " + documentId + " with text content.");
-                    } else {
-                        logger.debug("PDF OCR dont found content for document " + documentId);
-                    }
-                }
-            } catch (IOException | TesseractException e) {
-                e.printStackTrace();
-            }
-
-        } else {
-            logger.info("Failed PDF OCR for " + documentId + ". Document not anymore existing!");
+        Thread.currentThread().setName("PDFOCR-" + document.getId());
+        logger.info("Start PDF OCR for document " + document.getId());
+        if (document.getTextContent() != null) {
+            logger.warn("Document " + document.getId() + " already have text content! This task override it!");
         }
+        File targetFile = fileUtil.getFile(document);
+
+        try (PDDocument pdfDocument = PDDocument.load(targetFile)) {
+
+            PDFRenderer pr = new PDFRenderer(pdfDocument);
+            Tesseract tesseract = new Tesseract();
+            tesseract.setLanguage(language);
+            tesseract.setDatapath(dataPath);
+            StringBuilder stringBuilder = new StringBuilder();
+
+            for (int i = 0; i < pdfDocument.getNumberOfPages(); i++) {
+                BufferedImage bi = pr.renderImageWithDPI(i, 600);
+                stringBuilder.append(tesseract.doOCR(bi)).append("\n");
+            }
+
+            String content = stringBuilder.toString();
+
+            Optional<Document> optionalDocument = meliSearch.getDocumentById(document.getId());
+            if (optionalDocument.isPresent()) {
+                Document document = optionalDocument.get();
+                if (!content.isBlank()) {
+                    document.setTextContent(content);
+                    meliSearch.createOrReplaceDocument(document);
+                    logger.info("Updated document " + this.document + " with text content.");
+                } else {
+                    logger.debug("PDF OCR dont found content for document " + this.document);
+                }
+            }
+        } catch (IOException | TesseractException e) {
+            e.printStackTrace();
+        }
+
     }
 }

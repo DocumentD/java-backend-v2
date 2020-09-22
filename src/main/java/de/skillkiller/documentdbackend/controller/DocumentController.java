@@ -5,6 +5,7 @@ import de.skillkiller.documentdbackend.entity.Document;
 import de.skillkiller.documentdbackend.entity.User;
 import de.skillkiller.documentdbackend.entity.UserDetailsHolder;
 import de.skillkiller.documentdbackend.entity.http.SearchResponse;
+import de.skillkiller.documentdbackend.entity.http.UpdateDocumentResponse;
 import de.skillkiller.documentdbackend.search.MeliSearch;
 import de.skillkiller.documentdbackend.service.AccessTokenService;
 import de.skillkiller.documentdbackend.task.PDFOCR;
@@ -85,7 +86,6 @@ public class DocumentController {
                 document.setUserId(authenticatedUser.getId());
                 document.setPages(pdfDocument.getNumberOfPages());
                 document.setDocumentDate(new Date());
-                document.setFilename("IN PROGRESS");
                 document.setPdfTitle(pdfDocument.getDocumentInformation().getTitle());
                 // TODO Check for duplicates
                 document.setId(DigestUtils.sha1Hex(System.currentTimeMillis() + "#" + authenticatedUser.getId() + "#" + document.getPdfTitle()));
@@ -102,8 +102,6 @@ public class DocumentController {
                 }
                 pdfDocument.close();
 
-                meliSearch.createOrReplaceDocument(document);
-
                 String fileName = document.getId() + "-" + multipartFile.getOriginalFilename();
                 if (!fileName.endsWith(".pdf")) fileName = fileName + ".pdf";
 
@@ -117,7 +115,7 @@ public class DocumentController {
 
                 if (document.getTextContent() == null) {
 
-                    executorService.execute(new PDFOCR(document.getId(), meliSearch, fileUtil, tesseractDataPath, tesseractLanguage));
+                    executorService.execute(new PDFOCR(document, meliSearch, fileUtil, tesseractDataPath, tesseractLanguage));
                 }
                 logger.debug("Uploaded and created Document " + document.getId());
                 return ResponseEntity.ok(document);
@@ -132,7 +130,7 @@ public class DocumentController {
     }
 
     @PostMapping("update")
-    public ResponseEntity<Document> updateDocument(Authentication authentication, @RequestBody Document receivedDocument) {
+    public ResponseEntity<UpdateDocumentResponse> updateDocument(Authentication authentication, @RequestBody Document receivedDocument) {
         User authenticatedUser = ((UserDetailsHolder) authentication.getPrincipal()).getAuthenticatedUser();
         logger.debug("Received modify Document Request");
         if (receivedDocument.getTitle() == null || receivedDocument.getTitle().length() > 64 || receivedDocument.getTitle().isEmpty()) {
@@ -152,23 +150,22 @@ public class DocumentController {
             //Search for company und category difference
             boolean userUpdates = false;
 
-            if ((receivedDocument.getCompany() == null && document.getCompany() != null) ||
-                    (receivedDocument.getCompany() != null && document.getCompany() == null))
-                if (!(receivedDocument.getCompany() == null ? document.getCompany() == null : receivedDocument.getCompany().equals(document.getCompany()))) {
-                    SearchResponse searchResponse = meliSearch.getDocumentsWithCompanyFilterInUserScope(authenticatedUser.getId(), document.getCompany());
-                    Set<String> companies = authenticatedUser.getCompanies();
-                    if (companies == null) companies = new HashSet<>();
-                    if (searchResponse.getHits().size() <= 1) {
-                        if (document.getCompany() != null) companies.remove(document.getCompany());
-                        authenticatedUser.setCompanies(companies);
-                        userUpdates = true;
-                    }
-
-                    if (receivedDocument.getCompany() != null && !companies.contains(receivedDocument.getCompany())) {
-                        companies.add(receivedDocument.getCompany());
-                        userUpdates = true;
-                    }
+            if (!(receivedDocument.getCompany() == null ? document.getCompany() == null : receivedDocument.getCompany().equals(document.getCompany()))) {
+                SearchResponse searchResponse = meliSearch.getDocumentsWithCompanyFilterInUserScope(authenticatedUser.getId(), document.getCompany());
+                Set<String> companies = authenticatedUser.getCompanies();
+                if (companies == null) companies = new HashSet<>();
+                if (searchResponse.getHits().size() <= 1) {
+                    if (document.getCompany() != null) companies.remove(document.getCompany());
+                    authenticatedUser.setCompanies(companies);
+                    userUpdates = true;
                 }
+
+                if (receivedDocument.getCompany() != null && !companies.contains(receivedDocument.getCompany())) {
+                    companies.add(receivedDocument.getCompany());
+                    authenticatedUser.setCompanies(companies);
+                    userUpdates = true;
+                }
+            }
 
             if (!(receivedDocument.getCategory() == null ? document.getCategory() == null : receivedDocument.getCategory().equals(document.getCategory()))) {
                 SearchResponse searchResponse = meliSearch.getDocumentsWithCategoryFilterInUserScope(authenticatedUser.getId(), document.getCategory());
@@ -176,12 +173,13 @@ public class DocumentController {
                 if (categories == null) categories = new HashSet<>();
                 if (searchResponse.getHits().size() <= 1) {
                     if (document.getCategory() != null) categories.remove(document.getCategory());
-                    authenticatedUser.setCompanies(categories);
+                    authenticatedUser.setCategories(categories);
                     userUpdates = true;
                 }
 
                 if (receivedDocument.getCategory() != null && !categories.contains(receivedDocument.getCategory())) {
                     categories.add(receivedDocument.getCategory());
+                    authenticatedUser.setCategories(categories);
                     userUpdates = true;
                 }
             }
@@ -192,13 +190,13 @@ public class DocumentController {
 
             meliSearch.createOrReplaceDocument(receivedDocument);
             logger.debug("Updated document " + document.getId());
-            return ResponseEntity.ok(document);
+            return ResponseEntity.ok(new UpdateDocumentResponse(document, authenticatedUser.getCompanies(), authenticatedUser.getCategories()));
         } else return ResponseEntity.notFound().build();
 
     }
 
     @DeleteMapping("/delete/{id:[\\d\\w]+}")
-    public ResponseEntity<Void> deleteDocument(Authentication authentication, @PathVariable("id") String documentId) {
+    public ResponseEntity<UpdateDocumentResponse> deleteDocument(Authentication authentication, @PathVariable("id") String documentId) {
         User authenticatedUser = ((UserDetailsHolder) authentication.getPrincipal()).getAuthenticatedUser();
         logger.debug("Received delete Document Request");
         Optional<Document> optionalDocument = meliSearch.getDocumentByIdAndUserId(documentId, authenticatedUser.getId());
@@ -208,7 +206,35 @@ public class DocumentController {
             if (!delete) logger.warn("Delete from document file " + document.getId() + " failed!");
             meliSearch.deleteDocument(document.getId());
             logger.debug("Delete document " + documentId);
-            return ResponseEntity.ok().build();
+
+            //Search for old company und category
+            boolean userUpdates = false;
+
+            if (document.getCategory() != null) {
+                SearchResponse searchResponse = meliSearch.getDocumentsWithCategoryFilterInUserScope(authenticatedUser.getId(), document.getCategory());
+                if (searchResponse.getHits().size() <= 1) {
+                    final Set<String> categories = authenticatedUser.getCategories();
+                    categories.remove(document.getCategory());
+                    authenticatedUser.setCategories(categories);
+                    userUpdates = true;
+                }
+            }
+
+            if (document.getCompany() != null) {
+                SearchResponse searchResponse = meliSearch.getDocumentsWithCompanyFilterInUserScope(authenticatedUser.getId(), document.getCompany());
+                if (searchResponse.getHits().size() <= 1) {
+                    final Set<String> companies = authenticatedUser.getCompanies();
+                    companies.remove(document.getCompany());
+                    authenticatedUser.setCompanies(companies);
+                    userUpdates = true;
+                }
+            }
+
+            if (userUpdates) {
+                meliSearch.createOrReplaceUser(authenticatedUser);
+            }
+
+            return ResponseEntity.ok(new UpdateDocumentResponse(null, authenticatedUser.getCompanies(), authenticatedUser.getCategories()));
         }
         return ResponseEntity.notFound().build();
     }
