@@ -201,7 +201,7 @@ public class MeliSearch {
     }
 
     public void deleteDocument(String documentId) {
-        Unirest.delete(hostUrl + "/indexes/:index_uid/documents/:document_id")
+        Unirest.delete(hostUrl + "/indexes/{index_uid}/documents/{document_id}")
                 .routeParam("index_uid", documentIndexName)
                 .routeParam("document_id", documentId)
                 .header("X-Meili-API-Key", privateApiKey)
