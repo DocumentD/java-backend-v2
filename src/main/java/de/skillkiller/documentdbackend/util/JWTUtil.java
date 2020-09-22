@@ -16,7 +16,6 @@ public class JWTUtil {
     private final Algorithm ALGORITHM;
 
     public JWTUtil(@Value("${jwt.secret}") final String jwtSecret) {
-        System.out.println(jwtSecret);
         this.ALGORITHM = Algorithm.HMAC512(jwtSecret);
     }
 
