@@ -3,7 +3,7 @@ package de.skillkiller.documentdbackend;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.skillkiller.documentdbackend.entity.User;
-import de.skillkiller.documentdbackend.search.MeliSearch;
+import de.skillkiller.documentdbackend.search.MeiliSearch;
 import kong.unirest.Unirest;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
@@ -19,7 +19,7 @@ import java.util.Date;
 @Component
 public class ReadyListener {
 
-    private final MeliSearch meliSearch;
+    private final MeiliSearch meiliSearch;
     private final ObjectMapper objectMapper;
     private final PasswordEncoder passwordEncoder;
     private static final Logger logger = LoggerFactory.getLogger(ReadyListener.class);
@@ -27,10 +27,10 @@ public class ReadyListener {
     private final String firstUserUsername;
     private final String firstUserPassword;
 
-    public ReadyListener(MeliSearch meliSearch, ObjectMapper objectMapper, PasswordEncoder passwordEncoder,
+    public ReadyListener(MeiliSearch meiliSearch, ObjectMapper objectMapper, PasswordEncoder passwordEncoder,
                          @Value("${firstuser.username:admin}") String firstUserUsername,
                          @Value("${firstuser.password:${random.value}}") String firstUserPassword) {
-        this.meliSearch = meliSearch;
+        this.meiliSearch = meiliSearch;
         this.objectMapper = objectMapper;
         this.passwordEncoder = passwordEncoder;
         this.firstUserUsername = firstUserUsername;
@@ -60,10 +60,10 @@ public class ReadyListener {
             }
         });
 
-        logger.trace("Create user index if not exists: " + meliSearch.createUserIndex());
-        logger.trace("Create document index if not exists: " + meliSearch.createDocumentIndex());
+        logger.trace("Create user index if not exists: " + meiliSearch.createUserIndex());
+        logger.trace("Create document index if not exists: " + meiliSearch.createDocumentIndex());
 
-        if (!meliSearch.hasSystemUsers()) {
+        if (!meiliSearch.hasSystemUsers()) {
             User user = new User();
 
             user.setUsername(firstUserUsername);
@@ -71,7 +71,7 @@ public class ReadyListener {
             user.setModifyDate(new Date());
             user.setPasswordHash(passwordEncoder.encode(firstUserPassword));
 
-            if (meliSearch.createOrReplaceUser(user)) {
+            if (meiliSearch.createOrReplaceUser(user)) {
                 logger.info("Create first user for system:");
                 logger.info("Username: " + user.getUsername());
                 logger.info("Password: " + firstUserPassword);

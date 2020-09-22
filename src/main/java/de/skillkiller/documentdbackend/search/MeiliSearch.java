@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 
 @Component
-public class MeliSearch {
+public class MeiliSearch {
 
     private final String hostUrl;
     private final String privateApiKey;
@@ -22,9 +22,9 @@ public class MeliSearch {
     private final String documentIndexName;
     private final ObjectMapper objectMapper;
 
-    public MeliSearch(@Value("${meilisearch.hosturl}") String hostUrl,
-                      @Value("${meilisearch.privateapikey}") String privateApiKey,
-                      @Value("${meilisearch.indexprefix}") String indexPrefix, ObjectMapper objectMapper) {
+    public MeiliSearch(@Value("${meilisearch.hosturl}") String hostUrl,
+                       @Value("${meilisearch.privateapikey}") String privateApiKey,
+                       @Value("${meilisearch.indexprefix}") String indexPrefix, ObjectMapper objectMapper) {
         this.hostUrl = hostUrl;
         this.privateApiKey = privateApiKey;
         this.userIndexName = indexPrefix + "users";

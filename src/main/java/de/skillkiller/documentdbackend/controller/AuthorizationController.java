@@ -5,7 +5,7 @@ import de.skillkiller.documentdbackend.entity.User;
 import de.skillkiller.documentdbackend.entity.UserDetailsHolder;
 import de.skillkiller.documentdbackend.entity.http.AuthenticationRequest;
 import de.skillkiller.documentdbackend.entity.http.AuthenticationWithTokenRequest;
-import de.skillkiller.documentdbackend.search.MeliSearch;
+import de.skillkiller.documentdbackend.search.MeiliSearch;
 import de.skillkiller.documentdbackend.util.JWTUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,12 +26,12 @@ public class AuthorizationController {
 
     private final JWTUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
-    private final MeliSearch meliSearch;
+    private final MeiliSearch meiliSearch;
 
-    public AuthorizationController(JWTUtil jwtUtil, AuthenticationManager authenticationManager, MeliSearch meliSearch) {
+    public AuthorizationController(JWTUtil jwtUtil, AuthenticationManager authenticationManager, MeiliSearch meiliSearch) {
         this.jwtUtil = jwtUtil;
         this.authenticationManager = authenticationManager;
-        this.meliSearch = meliSearch;
+        this.meiliSearch = meiliSearch;
     }
 
     @PostMapping(value = "/login")
@@ -56,7 +56,7 @@ public class AuthorizationController {
         if (decodedJWT != null) {
             String userid = decodedJWT.getSubject();
             if (userid != null) {
-                Optional<User> optionalUser = meliSearch.getUserById(userid);
+                Optional<User> optionalUser = meiliSearch.getUserById(userid);
 
                 if (optionalUser.isPresent()) {
                     User user = optionalUser.get();
