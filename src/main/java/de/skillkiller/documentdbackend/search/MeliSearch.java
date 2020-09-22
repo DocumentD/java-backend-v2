@@ -146,6 +146,16 @@ public class MeliSearch {
         return Optional.empty();
     }
 
+    public boolean hasSystemUsers() {
+        HttpResponse<SearchResponse> request = Unirest.post(hostUrl + "/indexes/{index_uid}/search")
+                .body("{\"limit\": 1}")
+                .routeParam("index_uid", userIndexName)
+                .header("X-Meili-API-Key", privateApiKey)
+                .asObject(SearchResponse.class);
+
+        return request.getBody().getHits() != null && request.getBody().getHits().size() >= 1;
+    }
+
     public boolean createOrReplaceUser(User user) {
         //TODO Check if username already exists
         return createOrReplaceJSONDocument(user, userIndexName);
