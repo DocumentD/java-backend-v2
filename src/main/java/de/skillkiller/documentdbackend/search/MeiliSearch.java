@@ -193,7 +193,7 @@ public class MeiliSearch {
 
         if (success) {
             Unirest.post(hostUrl + "/indexes/{index_uid}/settings")
-                    .body("{\"attributesForFaceting\":[\"userid\"],\"searchableAttributes\":[\"documentid\",\"title\",\"documentdate\",\"deletedate\",\"pages\",\"textcontent\",\"pdftitle\",\"company\",\"category\",\"tags\"]}")
+                    .body("{\"attributesForFaceting\":[\"userid\"],\"searchableAttributes\":[\"documentid\",\"title\",\"documentdate\",\"deletedate\",\"tags\",\"pdftitle\",\"company\",\"category\",\"textcontent\",\"filename\"]}")
                     .routeParam("index_uid", documentIndexName)
                     .header("X-Meili-API-Key", privateApiKey)
                     .asEmptyAsync();
