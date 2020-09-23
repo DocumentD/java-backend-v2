@@ -32,4 +32,7 @@ public class User {
 
     @JsonProperty("categories")
     private Set<String> categories = new HashSet<>();
+
+    @JsonProperty("administrator")
+    private boolean administrator;
 }

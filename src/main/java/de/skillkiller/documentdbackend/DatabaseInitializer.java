@@ -70,6 +70,7 @@ public class DatabaseInitializer {
             user.setId(DigestUtils.sha1Hex(System.currentTimeMillis() + "#" + user.getUsername()));
             user.setModifyDate(new Date());
             user.setPasswordHash(passwordEncoder.encode(firstUserPassword));
+            user.setAdministrator(true);
 
             if (meiliSearch.createOrReplaceUser(user)) {
                 logger.info("Create first user for system:");
