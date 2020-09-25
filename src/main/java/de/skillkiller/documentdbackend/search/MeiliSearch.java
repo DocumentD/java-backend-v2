@@ -11,6 +11,7 @@ import kong.unirest.Unirest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Component
@@ -21,6 +22,7 @@ public class MeiliSearch {
     private final String userIndexName;
     private final String documentIndexName;
     private final ObjectMapper objectMapper;
+    private final SimpleDateFormat DELETEDATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 
     public MeiliSearch(@Value("${meilisearch.hosturl}") String hostUrl,
                        @Value("${meilisearch.privateapikey}") String privateApiKey,
@@ -30,6 +32,7 @@ public class MeiliSearch {
         this.userIndexName = indexPrefix + "users";
         this.documentIndexName = indexPrefix + "documents";
         this.objectMapper = objectMapper;
+        this.DELETEDATE_FORMAT.setTimeZone(TimeZone.getTimeZone("Europe/Berlin"));
     }
 
     public List<String> getAllIndexes() {
@@ -86,6 +89,43 @@ public class MeiliSearch {
     public SearchResponse getDocumentsWithCategoryFilterInUserScope(String userid, String company) {
         HttpResponse<SearchResponse> request = Unirest.post(hostUrl + "/indexes/{index_uid}/search")
                 .body(String.format("{\"filters\":\"category = \\\"%s\\\"\",\"facetFilters\":[\"userid:%s\"]}", company, userid))
+                .routeParam("index_uid", documentIndexName)
+                .header("X-Meili-API-Key", privateApiKey)
+                .asObject(SearchResponse.class);
+        return handleSearchResponseAndTransFormHitsToDocuments(request);
+    }
+
+    public List<Document> getDocumentsWithDeleteFilter(List<Date> datesToGet) {
+        List<Document> documentList = new ArrayList<>();
+        int offset = 0;
+        SearchResponse searchResponse;
+        do {
+            searchResponse = getDocumentsWithDeleteFilter(datesToGet, 1, offset);
+            for (Object hit : searchResponse.getHits()) {
+                if (hit instanceof Document) {
+                    documentList.add((Document) hit);
+                }
+            }
+
+            offset += searchResponse.getLimit();
+        } while (searchResponse.getNbHits() > (searchResponse.getOffset() + searchResponse.getLimit()));
+
+        return documentList;
+    }
+
+    private SearchResponse getDocumentsWithDeleteFilter(List<Date> datesToGet, int limit, int offset) {
+        if (datesToGet.size() == 0) throw new RuntimeException("Dates list is empty!");
+        StringBuilder stringBuilder = new StringBuilder("[[");
+        String pattern = "\"deletedate:%s\"";
+        stringBuilder.append(String.format(pattern, DELETEDATE_FORMAT.format(datesToGet.get(0))));
+        for (int i = 1; i < datesToGet.size(); i++) {
+            stringBuilder.append(",");
+            stringBuilder.append(String.format(pattern, DELETEDATE_FORMAT.format(datesToGet.get(i))));
+        }
+        stringBuilder.append("]]");
+
+        HttpResponse<SearchResponse> request = Unirest.post(hostUrl + "/indexes/{index_uid}/search")
+                .body(String.format("{\"facetFilters\": %s,\"limit\":%s,\"offset\":%s}", stringBuilder.toString(), limit, offset))
                 .routeParam("index_uid", documentIndexName)
                 .header("X-Meili-API-Key", privateApiKey)
                 .asObject(SearchResponse.class);
