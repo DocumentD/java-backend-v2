@@ -63,9 +63,9 @@ public class PDFOCR implements Runnable {
                 if (!content.isBlank()) {
                     document.setTextContent(content);
                     meiliSearch.createOrReplaceDocument(document);
-                    logger.info("Updated document " + this.document + " with text content.");
+                    logger.info("Updated document " + this.document.getId() + " with text content.");
                 } else {
-                    logger.debug("PDF OCR dont found content for document " + this.document);
+                    logger.debug("PDF OCR dont found content for document " + this.document.getId());
                 }
             }
         } catch (IOException | TesseractException e) {
