@@ -55,6 +55,7 @@ public class DocumentController {
         this.tesseractLanguage = tesseractLanguage;
     }
 
+    // TODO Add Display All
     @GetMapping("search")
     public SearchResponse searchForDocuments(Authentication authentication, @RequestParam("search") String search,
                                              @RequestParam int pageNumber, @RequestParam int pageSize) {
