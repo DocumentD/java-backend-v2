@@ -21,8 +21,8 @@ public class User {
     @JsonProperty("passwordhash")
     private String passwordHash;
 
-    @JsonProperty("connectpasswordhash")
-    private String connectPasswordHash;
+    @JsonProperty("connectpassword")
+    private String connectPassword;
 
     @JsonProperty("mailaddresses")
     private Set<String> mailAddresses = new HashSet<>();

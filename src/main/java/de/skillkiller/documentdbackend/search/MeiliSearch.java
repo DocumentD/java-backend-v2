@@ -238,7 +238,7 @@ public class MeiliSearch {
 
         if (success) {
             Unirest.post(hostUrl + "/indexes/{index_uid}/settings")
-                    .body("{\"attributesForFaceting\":[\"username\",\"connectpasswordhash\",\"mailaddresses\"],\"searchableAttributes\":[]}")
+                    .body("{\"attributesForFaceting\":[\"username\",\"connectpassword\",\"mailaddresses\"],\"searchableAttributes\":[]}")
                     .routeParam("index_uid", userIndexName)
                     .header("X-Meili-API-Key", privateApiKey)
                     .asEmptyAsync();
