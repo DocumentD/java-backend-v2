@@ -8,6 +8,8 @@ import de.skillkiller.documentdbackend.entity.http.SearchResponse;
 import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -23,6 +25,7 @@ public class MeiliSearch {
     private final String documentIndexName;
     private final ObjectMapper objectMapper;
     private final SimpleDateFormat DELETEDATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+    private static final Logger logger = LoggerFactory.getLogger(MeiliSearch.class);
 
     public MeiliSearch(@Value("${meilisearch.hosturl}") String hostUrl,
                        @Value("${meilisearch.privateapikey}") String privateApiKey,
@@ -176,6 +179,36 @@ public class MeiliSearch {
 
         if (request.getStatus() == 200) {
             return Optional.of(request.getBody());
+        }
+        return Optional.empty();
+    }
+
+    public Optional<User> getUserByMailAddress(String mailAddress) {
+        HttpResponse<SearchResponse> request = Unirest.post(hostUrl + "/indexes/{index_uid}/search")
+                .body(String.format("{\"facetFilters\": [\"mailaddresses:%s\"],\"offset\":0,\"limit\":1}", mailAddress))
+                .routeParam("index_uid", userIndexName)
+                .header("X-Meili-API-Key", privateApiKey)
+                .asObject(SearchResponse.class);
+
+        if (request.getStatus() == 200 && request.getBody().getNbHits() == 1) {
+            return Optional.of(objectMapper.convertValue(request.getBody().getHits().get(0), User.class));
+        } else if (request.getBody().getNbHits() > 1) {
+            logger.error("Multiple user with " + mailAddress);
+        }
+        return Optional.empty();
+    }
+
+    public Optional<User> getUserByConnectPassword(String connectPassword) {
+        HttpResponse<SearchResponse> request = Unirest.post(hostUrl + "/indexes/{index_uid}/search")
+                .body(String.format("{\"facetFilters\": [\"connectpassword:%s\"],\"offset\":0,\"limit\":1}", connectPassword))
+                .routeParam("index_uid", userIndexName)
+                .header("X-Meili-API-Key", privateApiKey)
+                .asObject(SearchResponse.class);
+
+        if (request.getStatus() == 200 && request.getBody().getNbHits() == 1) {
+            return Optional.of(objectMapper.convertValue(request.getBody().getHits().get(0), User.class));
+        } else if (request.getBody().getNbHits() > 1) {
+            logger.error("Multiple user with connect password" + connectPassword);
         }
         return Optional.empty();
     }
