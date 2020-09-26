@@ -55,12 +55,26 @@ public class MeiliSearch {
     }
 
     public SearchResponse searchForTopDocumentsInUserScope(String userid, int offset, int limit) {
-        //TODO Evt. unsorted Files
         HttpResponse<SearchResponse> request = Unirest.post(hostUrl + "/indexes/{index_uid}/search")
-                .body(String.format("{\"facetFilters\":[\"userid:%s\"],\"offset\":%s,\"limit\":%s,\"matches\":true}", userid, offset, limit))
+                .body(String.format("{\"facetFilters\":[\"userid:%s\",\"company:null\"],\"offset\":%s,\"limit\":%s,\"matches\":true}", userid, offset, limit))
                 .routeParam("index_uid", documentIndexName)
                 .header("X-Meili-API-Key", privateApiKey)
                 .asObject(SearchResponse.class);
+        return replaceDocumentsCompanyName(request);
+    }
+
+    private SearchResponse replaceDocumentsCompanyName(HttpResponse<SearchResponse> request) {
+        if (request.getBody().getHits() != null) {
+            for (Object hit : request.getBody().getHits()) {
+                if (hit instanceof LinkedHashMap) {
+                    LinkedHashMap<String, Object> linkedHashMap = (LinkedHashMap<String, Object>) hit;
+                    Object obj = linkedHashMap.get("company");
+                    if (obj instanceof String) {
+                        if ("null".equals(obj)) linkedHashMap.put("company", null);
+                    }
+                }
+            }
+        }
         return request.getBody();
     }
 
@@ -74,7 +88,8 @@ public class MeiliSearch {
                 .routeParam("index_uid", documentIndexName)
                 .header("X-Meili-API-Key", privateApiKey)
                 .asObject(SearchResponse.class);
-        return request.getBody();
+
+        return replaceDocumentsCompanyName(request);
     }
 
     public SearchResponse getDocumentsWithCompanyFilterInUserScope(String userid, String company) {
@@ -101,9 +116,11 @@ public class MeiliSearch {
         SearchResponse searchResponse;
         do {
             searchResponse = getDocumentsWithDeleteFilter(datesToGet, 1, offset);
-            for (Object hit : searchResponse.getHits()) {
-                if (hit instanceof Document) {
-                    documentList.add((Document) hit);
+            if (searchResponse.getHits() != null) {
+                for (Object hit : searchResponse.getHits()) {
+                    if (hit instanceof Document) {
+                        documentList.add((Document) hit);
+                    }
                 }
             }
 
@@ -202,6 +219,7 @@ public class MeiliSearch {
     }
 
     public boolean createOrReplaceDocument(Document document) {
+        if (document.getCompany() == null) document.setCompany("null");
         return createOrReplaceJSONDocument(document, documentIndexName);
     }
 
@@ -262,10 +280,14 @@ public class MeiliSearch {
         SearchResponse searchResponse = request.getBody();
         List<Object> hits = searchResponse.getHits();
         List<Object> userHits = new LinkedList<>();
-        for (Object hit : hits) {
-            userHits.add(objectMapper.convertValue(hit, Document.class));
+        if (hits != null) {
+            for (Object hit : hits) {
+                Document document = objectMapper.convertValue(hit, Document.class);
+                if (document.getCompany().equals("null")) document.setCompany(null);
+                userHits.add(document);
+            }
+            searchResponse.setHits(userHits);
         }
-        searchResponse.setHits(userHits);
         return request.getBody();
     }
 }
