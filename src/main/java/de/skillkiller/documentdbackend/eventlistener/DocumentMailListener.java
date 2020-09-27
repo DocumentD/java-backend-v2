@@ -16,6 +16,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 
 import javax.mail.*;
+import javax.mail.internet.InternetAddress;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -42,54 +43,63 @@ public class DocumentMailListener implements ApplicationListener<DocumentMailRec
         logger.debug("Received document mail");
         try {
             Message message = documentMailReceivedEvent.getMessage();
+            message.getAllHeaders().asIterator().forEachRemaining(header -> System.out.println(header.getName() + ": " + header.getValue()));
             Address[] fromAddresses = message.getFrom();
             if (fromAddresses.length > 0) {
                 Address fromAddress = fromAddresses[0];
-                Optional<User> optionalUser = meiliSearch.getUserByMailAddress(fromAddress.toString());
+                if (fromAddress instanceof InternetAddress) {
+                    InternetAddress internetAddress = (InternetAddress) fromAddress;
+                    Optional<User> optionalUser = meiliSearch.getUserByMailAddress(internetAddress.getAddress());
 
-                if (optionalUser.isPresent()) {
-                    User user = optionalUser.get();
-                    logger.debug("Sender has connected account");
+                    if (optionalUser.isPresent()) {
+                        User user = optionalUser.get();
+                        logger.debug("Sender has connected account");
 
-                    UserDetails userDetails;
-                    try {
-                        userDetails = this.userDetailsService.loadUserById(user.getId());
-                    } catch (UsernameNotFoundException e) {
-                        logger.error("Cannot cannot upload document for user " + user.getId());
-                        return;
-                    }
-
-
-                    UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
-                            userDetails, null, userDetails.getAuthorities()
-                    );
-
-                    List<BodyPart> bodyParts = getAttachment(message.getContent());
-
-                    for (BodyPart bodyPart : bodyParts) {
-                        InputStream inputStream = bodyPart.getInputStream();
-
-                        ByteBuffer byteBuffer = ByteBuffer.allocate(bodyPart.getSize() * 10);
-                        byteBuffer.mark();
-
-                        byte[] buf = new byte[4096];
-                        int bytesRead;
-                        while ((bytesRead = inputStream.read(buf)) != -1) {
-                            byteBuffer.put(buf, 0, bytesRead);
+                        UserDetails userDetails;
+                        try {
+                            userDetails = this.userDetailsService.loadUserById(user.getId());
+                        } catch (UsernameNotFoundException e) {
+                            logger.error("Cannot cannot upload document for user " + user.getId());
+                            return;
                         }
 
-                        byteBuffer.flip();
 
-                        byte[] bytes = new byte[byteBuffer.remaining()];
-                        byteBuffer.get(bytes);
+                        UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
+                                userDetails, null, userDetails.getAuthorities()
+                        );
 
-                        SimpleMultipartFile base64DecodedMultipartFile = new SimpleMultipartFile(bytes, bodyPart.getFileName());
+                        List<BodyPart> bodyParts = getAttachment(message.getContent());
 
-                        documentController.handleFileUpload(usernamePasswordAuthenticationToken, base64DecodedMultipartFile);
+                        for (BodyPart bodyPart : bodyParts) {
+                            InputStream inputStream = bodyPart.getInputStream();
+
+                            ByteBuffer byteBuffer = ByteBuffer.allocate(bodyPart.getSize() * 10);
+                            byteBuffer.mark();
+
+                            byte[] buf = new byte[4096];
+                            int bytesRead;
+                            while ((bytesRead = inputStream.read(buf)) != -1) {
+                                byteBuffer.put(buf, 0, bytesRead);
+                            }
+
+                            byteBuffer.flip();
+
+                            byte[] bytes = new byte[byteBuffer.remaining()];
+                            byteBuffer.get(bytes);
+
+                            SimpleMultipartFile base64DecodedMultipartFile = new SimpleMultipartFile(bytes, bodyPart.getFileName());
+
+                            documentController.handleFileUpload(usernamePasswordAuthenticationToken, base64DecodedMultipartFile);
+                        }
+                    } else {
+                        logger.debug("Sender " + internetAddress.toString() + " has no connected account");
                     }
+
                 } else {
-                    logger.debug("Sender has no connected account");
+                    logger.error("Mail Sender is not a internet address: " + fromAddress);
                 }
+            } else {
+                logger.error("Mail has no from address");
             }
 
             message.setFlag(Flags.Flag.DELETED, true);
@@ -120,7 +130,6 @@ public class DocumentMailListener implements ApplicationListener<DocumentMailRec
 
         if (content instanceof InputStream) {
             if (Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition())) {
-                System.out.println("Added");
                 result.add(part);
                 return result;
             } else {
