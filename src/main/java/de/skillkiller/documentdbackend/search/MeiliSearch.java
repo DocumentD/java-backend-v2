@@ -1,6 +1,7 @@
 package de.skillkiller.documentdbackend.search;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.internal.LinkedTreeMap;
 import de.skillkiller.documentdbackend.entity.Document;
 import de.skillkiller.documentdbackend.entity.User;
 import de.skillkiller.documentdbackend.entity.http.CreateIndexRequest;
@@ -171,14 +172,14 @@ public class MeiliSearch {
     }
 
     public Optional<User> getUserById(String userId) {
-        HttpResponse<User> request = Unirest.get(hostUrl + "/indexes/{index_uid}/documents/{document_id}")
+        HttpResponse<LinkedTreeMap> request = Unirest.get(hostUrl + "/indexes/{index_uid}/documents/{document_id}")
                 .routeParam("index_uid", userIndexName)
                 .routeParam("document_id", userId)
                 .header("X-Meili-API-Key", privateApiKey)
-                .asObject(User.class);
+                .asObject(LinkedTreeMap.class);
 
         if (request.getStatus() == 200) {
-            return Optional.of(request.getBody());
+            return Optional.of(objectMapper.convertValue(request.getBody(), User.class));
         }
         return Optional.empty();
     }
