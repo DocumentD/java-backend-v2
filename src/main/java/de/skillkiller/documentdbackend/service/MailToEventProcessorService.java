@@ -40,9 +40,9 @@ public class MailToEventProcessorService {
                 return;
             }
 
-            MailToEventProcessorService.logger.warn("Received mail with no recipient!");
+            logger.warn("Received mail with no recipient!");
         } catch (MessagingException e) {
-            MailToEventProcessorService.logger.error("Error by sorting mail into event", e);
+            logger.error("Error by sorting mail into event", e);
         }
     }
 
