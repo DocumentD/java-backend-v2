@@ -98,6 +98,7 @@ public class UserController {
 
         if (mailAddresses != null && mailAddresses.contains(mailAddress)) {
             mailAddresses.remove(mailAddress);
+            meiliSearch.createOrReplaceUser(authenticatedUser);
             return ResponseEntity.ok().build();
         } else {
             return ResponseEntity.badRequest().build();
