@@ -73,7 +73,7 @@ public class UserController {
         return ResponseEntity.badRequest().build();
     }
 
-    @PostMapping("/changepassword")
+    @PutMapping("password")
     public ResponseEntity<Void> changePassword(Authentication authentication, @RequestBody PasswordChangeRequest passwordChangeRequest) {
         User authenticatedUser = ((UserDetailsHolder) authentication.getPrincipal()).getAuthenticatedUser();
 
