@@ -60,6 +60,19 @@ public class UserController {
         return ResponseEntity.ok(connectPassword);
     }
 
+    @PutMapping("username")
+    public ResponseEntity<Void> setUsername(Authentication authentication, @RequestParam String username) {
+        User authenticatedUser = ((UserDetailsHolder) authentication.getPrincipal()).getAuthenticatedUser();
+
+        if (meiliSearch.searchUserByUsername(username).isEmpty()) {
+            authenticatedUser.setUsername(username);
+            meiliSearch.createOrReplaceUser(authenticatedUser);
+            return ResponseEntity.ok().build();
+        }
+
+        return ResponseEntity.badRequest().build();
+    }
+
     @PostMapping("/changepassword")
     public ResponseEntity<Void> changePassword(Authentication authentication, @RequestBody PasswordChangeRequest passwordChangeRequest) {
         User authenticatedUser = ((UserDetailsHolder) authentication.getPrincipal()).getAuthenticatedUser();
