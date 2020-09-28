@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @RestController
@@ -88,5 +89,18 @@ public class UserController {
         }
 
         return ResponseEntity.status(403).build();
+    }
+
+    @DeleteMapping("/mail/{mail}")
+    public ResponseEntity<Void> deleteConnectedMailAddress(Authentication authentication, @PathVariable("mail") String mailAddress) {
+        User authenticatedUser = ((UserDetailsHolder) authentication.getPrincipal()).getAuthenticatedUser();
+        Set<String> mailAddresses = authenticatedUser.getMailAddresses();
+
+        if (mailAddresses != null && mailAddresses.contains(mailAddress)) {
+            mailAddresses.remove(mailAddress);
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.badRequest().build();
+        }
     }
 }
