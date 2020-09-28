@@ -18,7 +18,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("user")
-@CrossOrigin(methods = {RequestMethod.POST, RequestMethod.GET, RequestMethod.DELETE}, origins = {"*"})
+@CrossOrigin(methods = {RequestMethod.PUT, RequestMethod.GET, RequestMethod.DELETE}, origins = {"*"})
 public class UserController {
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
@@ -88,7 +88,7 @@ public class UserController {
             }
         }
 
-        return ResponseEntity.status(403).build();
+        return ResponseEntity.badRequest().build();
     }
 
     @DeleteMapping("/mail/{mail}")
