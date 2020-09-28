@@ -134,6 +134,23 @@ public class MeiliSearch {
         return documentList;
     }
 
+    public List<User> getUsers(int offset, int limit) {
+        HttpResponse<List> request = Unirest.get(hostUrl + "/indexes/{index_uid}/documents")
+                .queryString("offset", offset)
+                .queryString("limit", limit)
+                .queryString("attributesToRetrieve", "userid,username,administrator")
+                .routeParam("index_uid", userIndexName)
+                .header("X-Meili-API-Key", privateApiKey)
+                .asObject(List.class);
+
+        List<User> users = new ArrayList<>(request.getBody().size());
+        for (Object o : request.getBody()) {
+            users.add(objectMapper.convertValue(o, User.class));
+        }
+
+        return users;
+    }
+
     private SearchResponse getDocumentsWithDeleteFilter(List<Date> datesToGet, int limit, int offset) {
         if (datesToGet.size() == 0) throw new RuntimeException("Dates list is empty!");
         StringBuilder stringBuilder = new StringBuilder("[[");
