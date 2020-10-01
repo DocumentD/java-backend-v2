@@ -88,6 +88,7 @@
     </dependencies>
 
     <build>
+        <finalName>dd-backend</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
