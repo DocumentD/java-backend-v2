@@ -1,7 +1,7 @@
 package de.skillkiller.documentdbackend.task;
 
 import de.skillkiller.documentdbackend.entity.Document;
-import de.skillkiller.documentdbackend.search.MeiliSearch;
+import de.skillkiller.documentdbackend.search.DocumentSearch;
 import de.skillkiller.documentdbackend.util.FileUtil;
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
@@ -20,14 +20,14 @@ public class PDFOCR implements Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger(PDFOCR.class);
     private final Document document;
-    private final MeiliSearch meiliSearch;
+    private final DocumentSearch documentSearch;
     private final FileUtil fileUtil;
     private final String dataPath;
     private final String language;
 
-    public PDFOCR(Document document, MeiliSearch meiliSearch, FileUtil fileUtil, String dataPath, String language) {
+    public PDFOCR(Document document, DocumentSearch documentSearch, FileUtil fileUtil, String dataPath, String language) {
         this.document = document;
-        this.meiliSearch = meiliSearch;
+        this.documentSearch = documentSearch;
         this.fileUtil = fileUtil;
         this.dataPath = dataPath;
         this.language = language;
@@ -57,12 +57,12 @@ public class PDFOCR implements Runnable {
 
             String content = stringBuilder.toString();
 
-            Optional<Document> optionalDocument = meiliSearch.getDocumentById(document.getId());
+            Optional<Document> optionalDocument = documentSearch.getDocumentById(document.getId());
             if (optionalDocument.isPresent()) {
                 Document document = optionalDocument.get();
                 if (!content.isBlank()) {
                     document.setTextContent(content);
-                    meiliSearch.createOrReplaceDocument(document);
+                    documentSearch.createOrReplaceDocument(document);
                     logger.info("Updated document " + this.document.getId() + " with text content.");
                 } else {
                     logger.debug("PDF OCR dont found content for document " + this.document.getId());

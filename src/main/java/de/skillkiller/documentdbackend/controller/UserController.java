@@ -3,7 +3,7 @@ package de.skillkiller.documentdbackend.controller;
 import de.skillkiller.documentdbackend.entity.User;
 import de.skillkiller.documentdbackend.entity.UserDetailsHolder;
 import de.skillkiller.documentdbackend.entity.http.PasswordChangeRequest;
-import de.skillkiller.documentdbackend.search.MeiliSearch;
+import de.skillkiller.documentdbackend.search.UserSearch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -22,11 +22,11 @@ import java.util.UUID;
 public class UserController {
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
-    private final MeiliSearch meiliSearch;
+    private final UserSearch userSearch;
     private final PasswordEncoder passwordEncoder;
 
-    public UserController(MeiliSearch meiliSearch, PasswordEncoder passwordEncoder) {
-        this.meiliSearch = meiliSearch;
+    public UserController(UserSearch userSearch, PasswordEncoder passwordEncoder) {
+        this.userSearch = userSearch;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -35,7 +35,7 @@ public class UserController {
         User authenticatedUser = ((UserDetailsHolder) authentication.getPrincipal()).getAuthenticatedUser();
 
         if (authenticatedUser.isAdministrator()) {
-            return ResponseEntity.ok(meiliSearch.getUsers(pageNumber * pageSize, pageSize));
+            return ResponseEntity.ok(userSearch.getUsers(pageNumber * pageSize, pageSize));
         }
 
         return ResponseEntity.status(403).build();
@@ -49,7 +49,7 @@ public class UserController {
         do {
             connectPassword = "D:" + UUID.randomUUID().toString();
             i++;
-        } while (meiliSearch.getUserByConnectPassword(connectPassword).isPresent() && i < 10);
+        } while (userSearch.getUserByConnectPassword(connectPassword).isPresent() && i < 10);
 
         if (i == 10) {
             logger.error("No free connect password with 10 try's found!");
@@ -57,7 +57,7 @@ public class UserController {
         }
 
         authenticatedUser.setConnectPassword(connectPassword);
-        meiliSearch.createOrReplaceUser(authenticatedUser);
+        userSearch.createOrReplaceUser(authenticatedUser);
         return ResponseEntity.ok(connectPassword);
     }
 
@@ -65,9 +65,9 @@ public class UserController {
     public ResponseEntity<Void> setUsername(Authentication authentication, @RequestParam String username) {
         User authenticatedUser = ((UserDetailsHolder) authentication.getPrincipal()).getAuthenticatedUser();
 
-        if (meiliSearch.searchUserByUsername(username).isEmpty()) {
+        if (userSearch.getUserByUsername(username).isEmpty()) {
             authenticatedUser.setUsername(username);
-            meiliSearch.createOrReplaceUser(authenticatedUser);
+            userSearch.createOrReplaceUser(authenticatedUser);
             return ResponseEntity.ok().build();
         }
 
@@ -83,7 +83,7 @@ public class UserController {
             if (passwordEncoder.matches(passwordChangeRequest.getOldPassword(), authenticatedUser.getPasswordHash())) {
                 authenticatedUser.setPasswordHash(passwordEncoder.encode(passwordChangeRequest.getNewPassword()));
                 authenticatedUser.setModifyDate(new Date());
-                meiliSearch.createOrReplaceUser(authenticatedUser);
+                userSearch.createOrReplaceUser(authenticatedUser);
                 return ResponseEntity.ok().build();
             }
         }
@@ -98,7 +98,7 @@ public class UserController {
 
         if (mailAddresses != null && mailAddresses.contains(mailAddress)) {
             mailAddresses.remove(mailAddress);
-            meiliSearch.createOrReplaceUser(authenticatedUser);
+            userSearch.createOrReplaceUser(authenticatedUser);
             return ResponseEntity.ok().build();
         } else {
             return ResponseEntity.badRequest().build();

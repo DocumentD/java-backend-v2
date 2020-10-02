@@ -1,7 +1,7 @@
 package de.skillkiller.documentdbackend.util;
 
 import de.skillkiller.documentdbackend.entity.Document;
-import de.skillkiller.documentdbackend.search.MeiliSearch;
+import de.skillkiller.documentdbackend.search.DocumentSearch;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -12,9 +12,9 @@ import java.util.Optional;
 public class FileUtil {
 
     private final String BASE_DIR;
-    private final MeiliSearch meiliSearch;
+    private final DocumentSearch meiliSearch;
 
-    public FileUtil(@Value("${file.basepath}") String base_dir, MeiliSearch meiliSearch) {
+    public FileUtil(@Value("${file.basepath}") String base_dir, DocumentSearch meiliSearch) {
         BASE_DIR = base_dir;
         this.meiliSearch = meiliSearch;
     }

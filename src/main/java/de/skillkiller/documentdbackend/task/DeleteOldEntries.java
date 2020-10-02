@@ -2,7 +2,7 @@ package de.skillkiller.documentdbackend.task;
 
 import de.skillkiller.documentdbackend.controller.DocumentController;
 import de.skillkiller.documentdbackend.entity.Document;
-import de.skillkiller.documentdbackend.search.MeiliSearch;
+import de.skillkiller.documentdbackend.search.DocumentSearch;
 import de.skillkiller.documentdbackend.service.UserDetailsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,11 +23,11 @@ import java.util.List;
 public class DeleteOldEntries {
 
     private static final Logger logger = LoggerFactory.getLogger(DeleteOldEntries.class);
-    private final MeiliSearch meiliSearch;
+    private final DocumentSearch meiliSearch;
     private final DocumentController documentController;
     private final UserDetailsService userDetailsService;
 
-    public DeleteOldEntries(MeiliSearch meiliSearch, DocumentController documentController, UserDetailsService userDetailsService) {
+    public DeleteOldEntries(DocumentSearch meiliSearch, DocumentController documentController, UserDetailsService userDetailsService) {
         this.meiliSearch = meiliSearch;
         this.documentController = documentController;
         this.userDetailsService = userDetailsService;

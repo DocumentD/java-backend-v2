@@ -3,7 +3,7 @@ package de.skillkiller.documentdbackend.eventlistener;
 
 import de.skillkiller.documentdbackend.entity.User;
 import de.skillkiller.documentdbackend.event.ConnectMailReceivedEvent;
-import de.skillkiller.documentdbackend.search.MeiliSearch;
+import de.skillkiller.documentdbackend.search.UserSearch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationListener;
@@ -18,9 +18,9 @@ import java.util.Optional;
 public class ConnectMailListener implements ApplicationListener<ConnectMailReceivedEvent> {
     private static final Logger logger = LoggerFactory.getLogger(ConnectMailListener.class);
 
-    private final MeiliSearch meiliSearch;
+    private final UserSearch meiliSearch;
 
-    public ConnectMailListener(MeiliSearch meiliSearch) {
+    public ConnectMailListener(UserSearch meiliSearch) {
         this.meiliSearch = meiliSearch;
     }
 
