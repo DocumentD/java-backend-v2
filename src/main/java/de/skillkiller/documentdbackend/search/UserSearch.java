@@ -3,7 +3,7 @@ package de.skillkiller.documentdbackend.search;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.internal.LinkedTreeMap;
 import de.skillkiller.documentdbackend.entity.User;
-import de.skillkiller.documentdbackend.search.response.SearchResponse;
+import de.skillkiller.documentdbackend.entity.http.meilisearch.response.SearchResponse;
 import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
 import org.slf4j.Logger;

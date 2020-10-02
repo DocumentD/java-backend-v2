@@ -1,7 +1,7 @@
 package de.skillkiller.documentdbackend.search;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.skillkiller.documentdbackend.search.request.CreateIndexRequest;
+import de.skillkiller.documentdbackend.entity.http.meilisearch.request.CreateIndexRequest;
 import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
