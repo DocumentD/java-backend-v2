@@ -1,4 +1,4 @@
-package de.skillkiller.documentdbackend.entity.frontend.http.request;
+package de.skillkiller.documentdbackend.entity.http.frontend.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;

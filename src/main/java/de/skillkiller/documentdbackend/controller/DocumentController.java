@@ -4,7 +4,7 @@ import de.skillkiller.documentdbackend.entity.AccessToken;
 import de.skillkiller.documentdbackend.entity.Document;
 import de.skillkiller.documentdbackend.entity.User;
 import de.skillkiller.documentdbackend.entity.UserDetailsHolder;
-import de.skillkiller.documentdbackend.entity.frontend.http.response.UpdateDocumentResponse;
+import de.skillkiller.documentdbackend.entity.http.frontend.response.UpdateDocumentResponse;
 import de.skillkiller.documentdbackend.search.DocumentSearch;
 import de.skillkiller.documentdbackend.search.UserSearch;
 import de.skillkiller.documentdbackend.search.response.SearchResponse;
