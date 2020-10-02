@@ -1,4 +1,4 @@
-package de.skillkiller.documentdbackend.entity.http;
+package de.skillkiller.documentdbackend.entity.frontend.http.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

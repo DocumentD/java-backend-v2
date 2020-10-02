@@ -1,4 +1,4 @@
-package de.skillkiller.documentdbackend.entity.http;
+package de.skillkiller.documentdbackend.entity.frontend.http.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import de.skillkiller.documentdbackend.entity.Document;

@@ -2,7 +2,7 @@ package de.skillkiller.documentdbackend.search;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.skillkiller.documentdbackend.entity.Document;
-import de.skillkiller.documentdbackend.entity.http.SearchResponse;
+import de.skillkiller.documentdbackend.search.response.SearchResponse;
 import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
 import kong.unirest.Unirest;

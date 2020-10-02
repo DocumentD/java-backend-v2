@@ -2,7 +2,7 @@ package de.skillkiller.documentdbackend.controller;
 
 import de.skillkiller.documentdbackend.entity.User;
 import de.skillkiller.documentdbackend.entity.UserDetailsHolder;
-import de.skillkiller.documentdbackend.entity.http.PasswordChangeRequest;
+import de.skillkiller.documentdbackend.entity.frontend.http.request.PasswordChangeRequest;
 import de.skillkiller.documentdbackend.search.UserSearch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
