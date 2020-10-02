@@ -3,7 +3,8 @@ package de.skillkiller.documentdbackend;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.skillkiller.documentdbackend.entity.User;
-import de.skillkiller.documentdbackend.search.MeiliSearch;
+import de.skillkiller.documentdbackend.search.DocumentSearch;
+import de.skillkiller.documentdbackend.search.UserSearch;
 import kong.unirest.Unirest;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
@@ -19,7 +20,8 @@ import java.util.Date;
 @Component
 public class DatabaseInitializer {
 
-    private final MeiliSearch meiliSearch;
+    private final UserSearch userSearch;
+    private final DocumentSearch documentSearch;
     private final ObjectMapper objectMapper;
     private final PasswordEncoder passwordEncoder;
     private static final Logger logger = LoggerFactory.getLogger(DatabaseInitializer.class);
@@ -27,10 +29,11 @@ public class DatabaseInitializer {
     private final String firstUserUsername;
     private final String firstUserPassword;
 
-    public DatabaseInitializer(MeiliSearch meiliSearch, ObjectMapper objectMapper, PasswordEncoder passwordEncoder,
+    public DatabaseInitializer(UserSearch userSearch, DocumentSearch documentSearch, ObjectMapper objectMapper, PasswordEncoder passwordEncoder,
                                @Value("${firstuser.username:admin}") String firstUserUsername,
                                @Value("${firstuser.password:${random.value}}") String firstUserPassword) {
-        this.meiliSearch = meiliSearch;
+        this.userSearch = userSearch;
+        this.documentSearch = documentSearch;
         this.objectMapper = objectMapper;
         this.passwordEncoder = passwordEncoder;
         this.firstUserUsername = firstUserUsername;
@@ -60,10 +63,10 @@ public class DatabaseInitializer {
             }
         });
 
-        logger.trace("Create user index if not exists: " + meiliSearch.createUserIndex());
-        logger.trace("Create document index if not exists: " + meiliSearch.createDocumentIndex());
+        logger.trace("Create user index if not exists: " + userSearch.createUserIndex());
+        logger.trace("Create document index if not exists: " + documentSearch.createDocumentIndex());
 
-        if (!meiliSearch.hasSystemUsers()) {
+        if (!userSearch.hasSystemUsers()) {
             User user = new User();
 
             user.setUsername(firstUserUsername);
@@ -72,7 +75,7 @@ public class DatabaseInitializer {
             user.setPasswordHash(passwordEncoder.encode(firstUserPassword));
             user.setAdministrator(true);
 
-            if (meiliSearch.createOrReplaceUser(user)) {
+            if (userSearch.createOrReplaceUser(user)) {
                 logger.info("Create first user for system:");
                 logger.info("Username: " + user.getUsername());
                 logger.info("Password: " + firstUserPassword);

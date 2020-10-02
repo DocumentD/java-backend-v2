@@ -4,9 +4,10 @@ import de.skillkiller.documentdbackend.entity.AccessToken;
 import de.skillkiller.documentdbackend.entity.Document;
 import de.skillkiller.documentdbackend.entity.User;
 import de.skillkiller.documentdbackend.entity.UserDetailsHolder;
-import de.skillkiller.documentdbackend.entity.http.SearchResponse;
-import de.skillkiller.documentdbackend.entity.http.UpdateDocumentResponse;
-import de.skillkiller.documentdbackend.search.MeiliSearch;
+import de.skillkiller.documentdbackend.entity.http.frontend.response.UpdateDocumentResponse;
+import de.skillkiller.documentdbackend.entity.http.meilisearch.response.SearchResponse;
+import de.skillkiller.documentdbackend.search.DocumentSearch;
+import de.skillkiller.documentdbackend.search.UserSearch;
 import de.skillkiller.documentdbackend.service.AccessTokenService;
 import de.skillkiller.documentdbackend.task.PDFOCR;
 import de.skillkiller.documentdbackend.util.FileUtil;
@@ -39,16 +40,18 @@ public class DocumentController {
 
     private static final ExecutorService executorService = Executors.newFixedThreadPool(3);
     private static final Logger logger = LoggerFactory.getLogger(DocumentController.class);
-    private final MeiliSearch meiliSearch;
+    private final UserSearch userSearch;
+    private final DocumentSearch documentSearch;
     private final FileUtil fileUtil;
     private final AccessTokenService accessTokenService;
     private final String tesseractDataPath;
     private final String tesseractLanguage;
 
-    public DocumentController(MeiliSearch meiliSearch, FileUtil fileUtil, AccessTokenService accessTokenService,
+    public DocumentController(UserSearch userSearch, DocumentSearch documentSearch, FileUtil fileUtil, AccessTokenService accessTokenService,
                               @Value("${tesseract.datapath}") String tesseractDataPath,
                               @Value("${tesseract.language}") String tesseractLanguage) {
-        this.meiliSearch = meiliSearch;
+        this.userSearch = userSearch;
+        this.documentSearch = documentSearch;
         this.fileUtil = fileUtil;
         this.accessTokenService = accessTokenService;
         this.tesseractDataPath = tesseractDataPath;
@@ -62,9 +65,9 @@ public class DocumentController {
         User authenticatedUser = ((UserDetailsHolder) authentication.getPrincipal()).getAuthenticatedUser();
         int offset = pageNumber * pageSize;
         if (search.equals("")) {
-            return meiliSearch.searchForTopDocumentsInUserScope(authenticatedUser.getId(), offset, pageSize);
+            return documentSearch.searchForTopDocumentsInUserScope(authenticatedUser.getId(), offset, pageSize);
         }
-        return meiliSearch.searchForDocumentInUserScope(authenticatedUser.getId(), search, offset, pageSize);
+        return documentSearch.searchForDocumentInUserScope(authenticatedUser.getId(), search, offset, pageSize);
     }
 
     @RequestMapping(value = "/upload", method = RequestMethod.POST)
@@ -112,17 +115,17 @@ public class DocumentController {
                 File targetFile = fileUtil.getFile(document);
                 Files.move(tempFile.toPath(), targetFile.toPath());
 
-                meiliSearch.createOrReplaceDocument(document);
+                documentSearch.createOrReplaceDocument(document);
 
                 if (document.getTextContent() == null) {
 
-                    executorService.execute(new PDFOCR(document, meiliSearch, fileUtil, tesseractDataPath, tesseractLanguage));
+                    executorService.execute(new PDFOCR(document, documentSearch, fileUtil, tesseractDataPath, tesseractLanguage));
                 }
                 logger.debug("Uploaded and created Document " + document.getId());
                 return ResponseEntity.ok(document);
             } catch (Exception e) {
                 logger.error("Something go wrong by upload", e);
-                meiliSearch.deleteDocument(document.getId());
+                documentSearch.deleteDocument(document.getId());
                 return ResponseEntity.status(500).build();
             }
         } else {
@@ -142,7 +145,7 @@ public class DocumentController {
             return ResponseEntity.badRequest().build();
         }
 
-        Optional<Document> optionalDocument = meiliSearch.getDocumentByIdAndUserId(receivedDocument.getId(), authenticatedUser.getId());
+        Optional<Document> optionalDocument = documentSearch.getDocumentByIdAndUserId(receivedDocument.getId(), authenticatedUser.getId());
         if (optionalDocument.isPresent()) {
             Document document = optionalDocument.get();
 
@@ -152,7 +155,7 @@ public class DocumentController {
             boolean userUpdates = false;
 
             if (!(receivedDocument.getCompany() == null ? document.getCompany() == null : receivedDocument.getCompany().equals(document.getCompany()))) {
-                SearchResponse searchResponse = meiliSearch.getDocumentsWithCompanyFilterInUserScope(authenticatedUser.getId(), document.getCompany());
+                SearchResponse searchResponse = documentSearch.getDocumentsWithCompanyFilterInUserScope(authenticatedUser.getId(), document.getCompany());
                 Set<String> companies = authenticatedUser.getCompanies();
                 if (companies == null) companies = new HashSet<>();
                 if (searchResponse.getHits().size() <= 1) {
@@ -169,7 +172,7 @@ public class DocumentController {
             }
 
             if (!(receivedDocument.getCategory() == null ? document.getCategory() == null : receivedDocument.getCategory().equals(document.getCategory()))) {
-                SearchResponse searchResponse = meiliSearch.getDocumentsWithCategoryFilterInUserScope(authenticatedUser.getId(), document.getCategory());
+                SearchResponse searchResponse = documentSearch.getDocumentsWithCategoryFilterInUserScope(authenticatedUser.getId(), document.getCategory());
                 Set<String> categories = authenticatedUser.getCategories();
                 if (categories == null) categories = new HashSet<>();
                 if (searchResponse.getHits().size() <= 1) {
@@ -186,10 +189,10 @@ public class DocumentController {
             }
 
             if (userUpdates) {
-                meiliSearch.createOrReplaceUser(authenticatedUser);
+                userSearch.createOrReplaceUser(authenticatedUser);
             }
 
-            meiliSearch.createOrReplaceDocument(receivedDocument);
+            documentSearch.createOrReplaceDocument(receivedDocument);
             logger.debug("Updated document " + document.getId());
             return ResponseEntity.ok(new UpdateDocumentResponse(document, authenticatedUser.getCompanies(), authenticatedUser.getCategories()));
         } else return ResponseEntity.notFound().build();
@@ -200,19 +203,19 @@ public class DocumentController {
     public ResponseEntity<UpdateDocumentResponse> deleteDocument(Authentication authentication, @PathVariable("id") String documentId) {
         User authenticatedUser = ((UserDetailsHolder) authentication.getPrincipal()).getAuthenticatedUser();
         logger.debug("Received delete Document Request");
-        Optional<Document> optionalDocument = meiliSearch.getDocumentByIdAndUserId(documentId, authenticatedUser.getId());
+        Optional<Document> optionalDocument = documentSearch.getDocumentByIdAndUserId(documentId, authenticatedUser.getId());
         if (optionalDocument.isPresent()) {
             Document document = optionalDocument.get();
             boolean delete = fileUtil.getFile(document).delete();
             if (!delete) logger.warn("Delete from document file " + document.getId() + " failed!");
-            meiliSearch.deleteDocument(document.getId());
+            documentSearch.deleteDocument(document.getId());
             logger.debug("Delete document " + documentId);
 
             //Search for old company und category
             boolean userUpdates = false;
 
             if (document.getCategory() != null) {
-                SearchResponse searchResponse = meiliSearch.getDocumentsWithCategoryFilterInUserScope(authenticatedUser.getId(), document.getCategory());
+                SearchResponse searchResponse = documentSearch.getDocumentsWithCategoryFilterInUserScope(authenticatedUser.getId(), document.getCategory());
                 if (searchResponse.getHits().size() <= 1) {
                     final Set<String> categories = authenticatedUser.getCategories();
                     categories.remove(document.getCategory());
@@ -222,7 +225,7 @@ public class DocumentController {
             }
 
             if (document.getCompany() != null) {
-                SearchResponse searchResponse = meiliSearch.getDocumentsWithCompanyFilterInUserScope(authenticatedUser.getId(), document.getCompany());
+                SearchResponse searchResponse = documentSearch.getDocumentsWithCompanyFilterInUserScope(authenticatedUser.getId(), document.getCompany());
                 if (searchResponse.getHits().size() <= 1) {
                     final Set<String> companies = authenticatedUser.getCompanies();
                     companies.remove(document.getCompany());
@@ -232,7 +235,7 @@ public class DocumentController {
             }
 
             if (userUpdates) {
-                meiliSearch.createOrReplaceUser(authenticatedUser);
+                userSearch.createOrReplaceUser(authenticatedUser);
             }
 
             return ResponseEntity.ok(new UpdateDocumentResponse(null, authenticatedUser.getCompanies(), authenticatedUser.getCategories()));
@@ -243,7 +246,7 @@ public class DocumentController {
     @GetMapping("/accesToken/{id:[\\d\\w]+}")
     public ResponseEntity<AccessToken> generateAccessToken(Authentication authentication, @PathVariable("id") String documentId) {
         User authenticatedUser = ((UserDetailsHolder) authentication.getPrincipal()).getAuthenticatedUser();
-        Optional<Document> optionalDocument = meiliSearch.getDocumentByIdAndUserId(documentId, authenticatedUser.getId());
+        Optional<Document> optionalDocument = documentSearch.getDocumentByIdAndUserId(documentId, authenticatedUser.getId());
         if (optionalDocument.isPresent()) {
             AccessToken accessToken = new AccessToken();
             accessToken.setDocumentId(optionalDocument.get().getId());
@@ -262,7 +265,7 @@ public class DocumentController {
         Optional<AccessToken> documentAccessTokenOptional = accessTokenService.isValidAndGet(token);
         if (documentAccessTokenOptional.isPresent()) {
             AccessToken accessToken = documentAccessTokenOptional.get();
-            Optional<Document> documentOptional = meiliSearch.getDocumentById(accessToken.getDocumentId());
+            Optional<Document> documentOptional = documentSearch.getDocumentById(accessToken.getDocumentId());
             if (documentOptional.isPresent()) {
                 File file = fileUtil.getFile(documentOptional.get());
                 if (file.exists() && file.isFile()) {

@@ -1,4 +1,4 @@
-package de.skillkiller.documentdbackend.entity.http;
+package de.skillkiller.documentdbackend.entity.http.meilisearch.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;

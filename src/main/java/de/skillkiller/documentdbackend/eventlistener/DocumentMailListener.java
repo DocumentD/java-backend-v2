@@ -4,7 +4,7 @@ package de.skillkiller.documentdbackend.eventlistener;
 import de.skillkiller.documentdbackend.controller.DocumentController;
 import de.skillkiller.documentdbackend.entity.User;
 import de.skillkiller.documentdbackend.event.DocumentMailReceivedEvent;
-import de.skillkiller.documentdbackend.search.MeiliSearch;
+import de.skillkiller.documentdbackend.search.UserSearch;
 import de.skillkiller.documentdbackend.service.UserDetailsService;
 import de.skillkiller.documentdbackend.util.SimpleMultipartFile;
 import org.slf4j.Logger;
@@ -28,11 +28,11 @@ import java.util.Optional;
 @Component
 public class DocumentMailListener implements ApplicationListener<DocumentMailReceivedEvent> {
     private static final Logger logger = LoggerFactory.getLogger(DocumentMailListener.class);
-    private final MeiliSearch meiliSearch;
+    private final UserSearch meiliSearch;
     private final DocumentController documentController;
     private final UserDetailsService userDetailsService;
 
-    public DocumentMailListener(MeiliSearch meiliSearch, DocumentController documentController, UserDetailsService userDetailsService) {
+    public DocumentMailListener(UserSearch meiliSearch, DocumentController documentController, UserDetailsService userDetailsService) {
         this.meiliSearch = meiliSearch;
         this.documentController = documentController;
         this.userDetailsService = userDetailsService;
