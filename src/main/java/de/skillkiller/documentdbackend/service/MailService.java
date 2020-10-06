@@ -30,17 +30,32 @@ public class MailService {
     private final MailToEventProcessorService mailToEventProcessorService;
 
 
-    public MailService(@Value("${imap.host}") String imapHost,
-                       @Value("${imap.port}") String imapPort,
-                       @Value("${imap.user}") String user,
-                       @Value("${imap.password}") String password, MailToEventProcessorService mailToEventProcessorService) {
+    public MailService(@Value("${imap.host:}") String imapHost,
+                       @Value("${imap.port:}") String imapPort,
+                       @Value("${imap.user:}") String user,
+                       @Value("${imap.password:}") String password, MailToEventProcessorService mailToEventProcessorService) {
         this.imapHost = imapHost;
         this.imapPort = imapPort;
         this.user = user;
         this.password = password;
         this.mailToEventProcessorService = mailToEventProcessorService;
         this.properties = getServerProperties();
-        handleMailConnection();
+        if (isMailServiceEnabled()) {
+            handleMailConnection();
+        }
+    }
+
+    private boolean isMailServiceEnabled() {
+        if (!imapHost.isBlank() && !imapPort.isBlank() && !user.isBlank() && !password.isBlank()) {
+            logger.info("Enable Mail Service");
+            return true;
+        } else if (imapHost.isBlank() && imapPort.isBlank() && user.isBlank() && password.isBlank()) {
+            logger.info("Mail Service is not enabled");
+            return false;
+        } else {
+            logger.warn("Not all values for the mail service are available");
+            return false;
+        }
     }
 
     private void handleMailConnection() {
