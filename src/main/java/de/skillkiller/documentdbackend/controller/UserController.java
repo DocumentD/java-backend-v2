@@ -62,7 +62,7 @@ public class UserController {
     }
 
     @PutMapping("username")
-    public ResponseEntity<Void> setUsername(Authentication authentication, @RequestParam String username) {
+    public ResponseEntity<Void> setUsername(Authentication authentication, @RequestBody String username) {
         User authenticatedUser = ((UserDetailsHolder) authentication.getPrincipal()).getAuthenticatedUser();
 
         if (userSearch.getUserByUsername(username).isEmpty()) {
