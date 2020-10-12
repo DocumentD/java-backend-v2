@@ -64,18 +64,18 @@ public class DeleteOldEntries {
             boolean processed;
 
             do {
+                if (tries == 5) throw new RuntimeException("Exceeded maximum retries for waiting for user updates");
                 processed = userSearch.hasAllUpdatesProcessed();
                 Thread.sleep(TimeUnit.SECONDS.toMillis(1));
                 tries++;
-                if (tries >= 5) throw new RuntimeException("Exceeded maximum retries for waiting for user updates");
             } while (!processed);
 
             tries = 0;
             do {
+                if (tries == 5) throw new RuntimeException("Exceeded maximum retries for waiting for document updates");
                 processed = documentSearch.hasAllUpdatesProcessed();
                 Thread.sleep(TimeUnit.SECONDS.toMillis(1));
                 tries++;
-                if (tries >= 5) throw new RuntimeException("Exceeded maximum retries for waiting for document updates");
             } while (!processed);
             logger.info("All meilisearch update operations completed");
 
