@@ -3,6 +3,7 @@ package de.skillkiller.documentdbackend.search;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.skillkiller.documentdbackend.entity.Document;
 import de.skillkiller.documentdbackend.entity.http.meilisearch.response.SearchResponse;
+import de.skillkiller.documentdbackend.service.DatabaseLockService;
 import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.TimeoutException;
 
 @Component
 public class DocumentSearch {
@@ -24,15 +26,17 @@ public class DocumentSearch {
     private final ObjectMapper objectMapper;
     private final SimpleDateFormat DELETEDATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
     private final MeiliSearch meiliSearch;
+    private final DatabaseLockService databaseLockService;
 
     public DocumentSearch(@Value("${meilisearch.hosturl}") String hostUrl,
                           @Value("${meilisearch.privateapikey}") String privateApiKey,
-                          @Value("${meilisearch.indexprefix}") String indexPrefix, ObjectMapper objectMapper, MeiliSearch meiliSearch) {
+                          @Value("${meilisearch.indexprefix}") String indexPrefix, ObjectMapper objectMapper, MeiliSearch meiliSearch, DatabaseLockService databaseLockService) {
         this.hostUrl = hostUrl;
         this.privateApiKey = privateApiKey;
         this.documentIndexName = indexPrefix + "documents";
         this.objectMapper = objectMapper;
         this.meiliSearch = meiliSearch;
+        this.databaseLockService = databaseLockService;
         this.DELETEDATE_FORMAT.setTimeZone(TimeZone.getTimeZone("Europe/Berlin"));
     }
 
@@ -51,7 +55,7 @@ public class DocumentSearch {
         return indexes;
     }
 
-    public boolean createDocumentIndex() {
+    public boolean createDocumentIndex() throws TimeoutException, InterruptedException {
         boolean success = meiliSearch.createIndex(documentIndexName, "documentid");
 
         if (success) {
@@ -64,7 +68,7 @@ public class DocumentSearch {
         return success;
     }
 
-    public boolean createOrReplaceDocument(Document document) {
+    public boolean createOrReplaceDocument(Document document) throws TimeoutException, InterruptedException {
         if (document.getCompany() == null) document.setCompany("null");
         return meiliSearch.createOrReplaceMeiliDocument(document, documentIndexName);
     }
@@ -207,7 +211,7 @@ public class DocumentSearch {
         return Optional.empty();
     }
 
-    public void deleteDocument(String documentId) {
+    public void deleteDocument(String documentId) throws TimeoutException, InterruptedException {
         meiliSearch.deleteMeiliDocument(documentIndexName, documentId);
     }
 

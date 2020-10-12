@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeoutException;
 
 @Component
 public class UserSearch {
@@ -35,12 +36,12 @@ public class UserSearch {
         this.meiliSearch = meiliSearch;
     }
 
-    public boolean createOrReplaceUser(User user) {
+    public boolean createOrReplaceUser(User user) throws TimeoutException, InterruptedException {
         //TODO Check if username already exists
         return meiliSearch.createOrReplaceMeiliDocument(user, userIndexName);
     }
 
-    public boolean createUserIndex() {
+    public boolean createUserIndex() throws TimeoutException, InterruptedException {
         boolean success = meiliSearch.createIndex(userIndexName, "userid");
 
         if (success) {
@@ -145,7 +146,7 @@ public class UserSearch {
         return meiliSearch.hasAllUpdatesProcessed(userIndexName);
     }
 
-    public void deleteUser(String userId) {
+    public void deleteUser(String userId) throws TimeoutException, InterruptedException {
         meiliSearch.deleteMeiliDocument(userIndexName, userId);
     }
 }

@@ -16,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
+import java.util.concurrent.TimeoutException;
 
 @Component
 public class DatabaseInitializer {
@@ -63,8 +64,12 @@ public class DatabaseInitializer {
             }
         });
 
-        logger.trace("Create user index if not exists: " + userSearch.createUserIndex());
-        logger.trace("Create document index if not exists: " + documentSearch.createDocumentIndex());
+        try {
+            logger.trace("Create user index if not exists: " + userSearch.createUserIndex());
+            logger.trace("Create document index if not exists: " + documentSearch.createDocumentIndex());
+        } catch (TimeoutException | InterruptedException e) {
+            logger.error("Ran in timeout by creating indexes", e);
+        }
 
         if (!userSearch.hasSystemUsers()) {
             User user = new User();
@@ -75,12 +80,16 @@ public class DatabaseInitializer {
             user.setPasswordHash(passwordEncoder.encode(firstUserPassword));
             user.setAdministrator(true);
 
-            if (userSearch.createOrReplaceUser(user)) {
-                logger.info("Create first user for system:");
-                logger.info("Username: " + user.getUsername());
-                logger.info("Password: " + firstUserPassword);
-            } else {
-                logger.error("Creating first user failed!");
+            try {
+                if (userSearch.createOrReplaceUser(user)) {
+                    logger.info("Create first user for system:");
+                    logger.info("Username: " + user.getUsername());
+                    logger.info("Password: " + firstUserPassword);
+                } else {
+                    logger.error("Creating first user failed!");
+                }
+            } catch (TimeoutException | InterruptedException e) {
+                logger.error("Ran in timeout during create first user", e);
             }
 
         }

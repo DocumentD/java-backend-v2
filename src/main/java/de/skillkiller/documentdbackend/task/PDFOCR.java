@@ -14,6 +14,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
+import java.util.concurrent.TimeoutException;
 
 
 public class PDFOCR implements Runnable {
@@ -62,7 +63,12 @@ public class PDFOCR implements Runnable {
                 Document document = optionalDocument.get();
                 if (!content.isBlank()) {
                     document.setTextContent(content);
-                    documentSearch.createOrReplaceDocument(document);
+                    try {
+                        documentSearch.createOrReplaceDocument(document);
+                    } catch (TimeoutException | InterruptedException e) {
+                        logger.error("Ran in timeout during document update after ocr update", e);
+                        return;
+                    }
                     logger.info("Updated document " + this.document.getId() + " with text content.");
                 } else {
                     logger.debug("PDF OCR dont found content for document " + this.document.getId());

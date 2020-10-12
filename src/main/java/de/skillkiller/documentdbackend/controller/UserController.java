@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeoutException;
 
 @RestController
 @RequestMapping("user")
@@ -57,7 +58,12 @@ public class UserController {
         }
 
         authenticatedUser.setConnectPassword(connectPassword);
-        userSearch.createOrReplaceUser(authenticatedUser);
+        try {
+            userSearch.createOrReplaceUser(authenticatedUser);
+        } catch (TimeoutException | InterruptedException e) {
+            logger.error("Ran in timout during save new connect password");
+            return ResponseEntity.status(503).build();
+        }
         return ResponseEntity.ok(connectPassword);
     }
 
@@ -67,7 +73,12 @@ public class UserController {
 
         if (userSearch.getUserByUsername(username).isEmpty()) {
             authenticatedUser.setUsername(username);
-            userSearch.createOrReplaceUser(authenticatedUser);
+            try {
+                userSearch.createOrReplaceUser(authenticatedUser);
+            } catch (TimeoutException | InterruptedException e) {
+                logger.error("Ran in timout during save new username");
+                return ResponseEntity.status(503).build();
+            }
             return ResponseEntity.ok().build();
         }
 
@@ -83,7 +94,12 @@ public class UserController {
             if (passwordEncoder.matches(passwordChangeRequest.getOldPassword(), authenticatedUser.getPasswordHash())) {
                 authenticatedUser.setPasswordHash(passwordEncoder.encode(passwordChangeRequest.getNewPassword()));
                 authenticatedUser.setModifyDate(new Date());
-                userSearch.createOrReplaceUser(authenticatedUser);
+                try {
+                    userSearch.createOrReplaceUser(authenticatedUser);
+                } catch (TimeoutException | InterruptedException e) {
+                    logger.error("Ran in timout during save new password");
+                    return ResponseEntity.status(503).build();
+                }
                 return ResponseEntity.ok().build();
             }
         }
@@ -98,7 +114,12 @@ public class UserController {
 
         if (mailAddresses != null && mailAddresses.contains(mailAddress)) {
             mailAddresses.remove(mailAddress);
-            userSearch.createOrReplaceUser(authenticatedUser);
+            try {
+                userSearch.createOrReplaceUser(authenticatedUser);
+            } catch (TimeoutException | InterruptedException e) {
+                logger.error("Ran in timout during delete mail address");
+                return ResponseEntity.status(503).build();
+            }
             return ResponseEntity.ok().build();
         } else {
             return ResponseEntity.badRequest().build();

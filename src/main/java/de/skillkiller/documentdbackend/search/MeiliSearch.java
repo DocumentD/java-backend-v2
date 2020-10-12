@@ -2,6 +2,7 @@ package de.skillkiller.documentdbackend.search;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.skillkiller.documentdbackend.entity.http.meilisearch.request.CreateIndexRequest;
+import de.skillkiller.documentdbackend.service.DatabaseLockService;
 import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
@@ -13,19 +14,22 @@ import org.springframework.stereotype.Component;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 
 @Component
 public class MeiliSearch {
 
     private final String hostUrl;
     private final String privateApiKey;
+    private final DatabaseLockService databaseLockService;
     private static final Logger logger = LoggerFactory.getLogger(MeiliSearch.class);
 
     public MeiliSearch(@Value("${meilisearch.hosturl}") String hostUrl,
                        @Value("${meilisearch.privateapikey}") String privateApiKey,
-                       @Value("${meilisearch.indexprefix}") String indexPrefix, ObjectMapper objectMapper) {
+                       @Value("${meilisearch.indexprefix}") String indexPrefix, ObjectMapper objectMapper, DatabaseLockService databaseLockService) {
         this.hostUrl = hostUrl;
         this.privateApiKey = privateApiKey;
+        this.databaseLockService = databaseLockService;
     }
 
     protected boolean hasAllUpdatesProcessed(String primaryKey) {
@@ -49,31 +53,37 @@ public class MeiliSearch {
         }
     }
 
-    protected boolean createIndex(String uid, String primaryKey) {
+    protected boolean createIndex(String uid, String primaryKey) throws TimeoutException, InterruptedException {
+        databaseLockService.requestDoingWriteOperation();
         HttpResponse<JsonNode> request = Unirest.post(hostUrl + "/indexes")
                 .body(new CreateIndexRequest(uid, primaryKey))
                 .header("X-Meili-API-Key", privateApiKey)
                 .asJson();
 
+        databaseLockService.completeWriteOperation();
         return request.getStatus() == 201;
     }
 
-    protected boolean createOrReplaceMeiliDocument(Object o, String primaryKey) {
+    protected boolean createOrReplaceMeiliDocument(Object o, String primaryKey) throws TimeoutException, InterruptedException {
+        databaseLockService.requestDoingWriteOperation();
         HttpResponse request = Unirest.post(hostUrl + "/indexes/{index_uid}/documents")
                 .body(Collections.singletonList(o))
                 .routeParam("index_uid", primaryKey)
                 .header("X-Meili-API-Key", privateApiKey)
                 .asEmpty();
 
+        databaseLockService.completeWriteOperation();
         return request.getStatus() == 202;
     }
 
-    protected void deleteMeiliDocument(String indexName, String id) {
+    protected void deleteMeiliDocument(String indexName, String id) throws TimeoutException, InterruptedException {
+        databaseLockService.requestDoingWriteOperation();
         Unirest.delete(hostUrl + "/indexes/{index_uid}/documents/{document_id}")
                 .routeParam("index_uid", indexName)
                 .routeParam("document_id", id)
                 .header("X-Meili-API-Key", privateApiKey)
                 .asEmptyAsync();
+        databaseLockService.completeWriteOperation();
     }
 
 }
