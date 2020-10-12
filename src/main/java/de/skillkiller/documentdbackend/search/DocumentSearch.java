@@ -181,6 +181,22 @@ public class DocumentSearch {
         return Optional.empty();
     }
 
+    public List<Document> getDocuments(int offset, int limit) {
+        HttpResponse<List> request = Unirest.get(hostUrl + "/indexes/{index_uid}/documents")
+                .queryString("offset", offset)
+                .queryString("limit", limit)
+                .routeParam("index_uid", documentIndexName)
+                .header("X-Meili-API-Key", privateApiKey)
+                .asObject(List.class);
+
+        List<Document> documents = new ArrayList<>(request.getBody().size());
+        for (Object o : request.getBody()) {
+            documents.add(objectMapper.convertValue(o, Document.class));
+        }
+
+        return documents;
+    }
+
     public Optional<Document> getDocumentByIdAndUserId(String documentId, String userId) {
         Optional<Document> optionalDocument = getDocumentById(documentId);
         if (optionalDocument.isPresent()) {
