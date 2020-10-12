@@ -141,6 +141,10 @@ public class UserSearch {
         return request.getBody().getHits() != null && request.getBody().getHits().size() >= 1;
     }
 
+    public boolean hasAllUpdatesProcessed() {
+        return meiliSearch.hasAllUpdatesProcessed(userIndexName);
+    }
+
     public void deleteUser(String userId) {
         meiliSearch.deleteMeiliDocument(userIndexName, userId);
     }

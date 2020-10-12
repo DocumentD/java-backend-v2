@@ -211,6 +211,10 @@ public class DocumentSearch {
         meiliSearch.deleteMeiliDocument(documentIndexName, documentId);
     }
 
+    public boolean hasAllUpdatesProcessed() {
+        return meiliSearch.hasAllUpdatesProcessed(documentIndexName);
+    }
+
 
     private SearchResponse handleSearchResponseAndTransFormHitsToDocuments(HttpResponse<SearchResponse> request) {
         SearchResponse searchResponse = request.getBody();
