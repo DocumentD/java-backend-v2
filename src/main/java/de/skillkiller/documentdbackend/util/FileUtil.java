@@ -2,6 +2,7 @@ package de.skillkiller.documentdbackend.util;
 
 import de.skillkiller.documentdbackend.entity.Document;
 import de.skillkiller.documentdbackend.search.DocumentSearch;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -11,6 +12,7 @@ import java.util.Optional;
 @Service
 public class FileUtil {
 
+    @Getter
     private final String BASE_DIR;
     private final DocumentSearch meiliSearch;
 
