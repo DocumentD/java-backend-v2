@@ -37,12 +37,12 @@ public class DatabaseLockService {
 
     public void lockNewWriteOperations() {
         lock.lock();
-        logger.trace("Locked new write operations");
+        logger.info("Locked new write operations");
     }
 
     public void unlockNewWriteOperations() {
         lock.unlock();
-        logger.trace("Unlocked new write operations");
+        logger.info("Unlocked new write operations");
 
     }
 
