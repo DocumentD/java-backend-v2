@@ -13,6 +13,7 @@ import javax.mail.*;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Optional;
+import java.util.concurrent.TimeoutException;
 
 @Component
 public class ConnectMailListener implements ApplicationListener<ConnectMailReceivedEvent> {
@@ -43,7 +44,12 @@ public class ConnectMailListener implements ApplicationListener<ConnectMailRecei
                         if (optionalMailAddress.isEmpty()) {
                             if (user.getMailAddresses() == null) user.setMailAddresses(new HashSet<>());
                             user.getMailAddresses().add(fromAddress.toString());
-                            meiliSearch.createOrReplaceUser(user);
+                            try {
+                                meiliSearch.createOrReplaceUser(user);
+                            } catch (TimeoutException | InterruptedException e) {
+                                logger.error("Ran in timeout during update user after connect mail");
+                                return;
+                            }
                             logger.info("Connect new mail address with user " + user.getId());
                         }
 

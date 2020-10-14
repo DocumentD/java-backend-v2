@@ -32,6 +32,7 @@ import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeoutException;
 
 @RestController
 @RequestMapping("document")
@@ -125,7 +126,11 @@ public class DocumentController {
                 return ResponseEntity.ok(document);
             } catch (Exception e) {
                 logger.error("Something go wrong by upload", e);
-                documentSearch.deleteDocument(document.getId());
+                try {
+                    documentSearch.deleteDocument(document.getId());
+                } catch (TimeoutException | InterruptedException timeoutException) {
+                    logger.error("Ran in timeout by deleting document", e);
+                }
                 return ResponseEntity.status(500).build();
             }
         } else {
@@ -188,13 +193,19 @@ public class DocumentController {
                 }
             }
 
-            if (userUpdates) {
-                userSearch.createOrReplaceUser(authenticatedUser);
-            }
 
-            documentSearch.createOrReplaceDocument(receivedDocument);
-            logger.debug("Updated document " + document.getId());
-            return ResponseEntity.ok(new UpdateDocumentResponse(document, authenticatedUser.getCompanies(), authenticatedUser.getCategories()));
+            try {
+                if (userUpdates) {
+                    userSearch.createOrReplaceUser(authenticatedUser);
+                }
+
+                documentSearch.createOrReplaceDocument(receivedDocument);
+                logger.debug("Updated document " + document.getId());
+                return ResponseEntity.ok(new UpdateDocumentResponse(document, authenticatedUser.getCompanies(), authenticatedUser.getCategories()));
+            } catch (TimeoutException | InterruptedException e) {
+                logger.error("Ran in timeout during update document or user", e);
+                return ResponseEntity.status(503).build();
+            }
         } else return ResponseEntity.notFound().build();
 
     }
@@ -208,7 +219,12 @@ public class DocumentController {
             Document document = optionalDocument.get();
             boolean delete = fileUtil.getFile(document).delete();
             if (!delete) logger.warn("Delete from document file " + document.getId() + " failed!");
-            documentSearch.deleteDocument(document.getId());
+            try {
+                documentSearch.deleteDocument(document.getId());
+            } catch (TimeoutException | InterruptedException e) {
+                logger.error("Ran in timeout during delete document", e);
+                return ResponseEntity.status(503).build();
+            }
             logger.debug("Delete document " + documentId);
 
             //Search for old company und category
@@ -235,7 +251,11 @@ public class DocumentController {
             }
 
             if (userUpdates) {
-                userSearch.createOrReplaceUser(authenticatedUser);
+                try {
+                    userSearch.createOrReplaceUser(authenticatedUser);
+                } catch (TimeoutException | InterruptedException e) {
+                    logger.error("Ran in timeout during update user autocompletion after document delete");
+                }
             }
 
             return ResponseEntity.ok(new UpdateDocumentResponse(null, authenticatedUser.getCompanies(), authenticatedUser.getCategories()));

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeoutException;
 
 @Component
 public class UserSearch {
@@ -35,12 +36,17 @@ public class UserSearch {
         this.meiliSearch = meiliSearch;
     }
 
-    public boolean createOrReplaceUser(User user) {
+    public boolean createOrReplaceUser(User user) throws TimeoutException, InterruptedException {
         //TODO Check if username already exists
         return meiliSearch.createOrReplaceMeiliDocument(user, userIndexName);
     }
 
-    public boolean createUserIndex() {
+    public boolean createOrReplaceUserBypassWriteLock(User user) {
+        //TODO Check if username already exists
+        return meiliSearch.createOrReplaceMeiliDocumentBypassWriteLock(user, userIndexName);
+    }
+
+    public boolean createUserIndex() throws TimeoutException, InterruptedException {
         boolean success = meiliSearch.createIndex(userIndexName, "userid");
 
         if (success) {
@@ -57,7 +63,6 @@ public class UserSearch {
         HttpResponse<List> request = Unirest.get(hostUrl + "/indexes/{index_uid}/documents")
                 .queryString("offset", offset)
                 .queryString("limit", limit)
-                .queryString("attributesToRetrieve", "userid,username,administrator")
                 .routeParam("index_uid", userIndexName)
                 .header("X-Meili-API-Key", privateApiKey)
                 .asObject(List.class);
@@ -141,7 +146,11 @@ public class UserSearch {
         return request.getBody().getHits() != null && request.getBody().getHits().size() >= 1;
     }
 
-    public void deleteUser(String userId) {
+    public boolean hasAllUpdatesProcessed() {
+        return meiliSearch.hasAllUpdatesProcessed(userIndexName);
+    }
+
+    public void deleteUser(String userId) throws TimeoutException, InterruptedException {
         meiliSearch.deleteMeiliDocument(userIndexName, userId);
     }
 }
