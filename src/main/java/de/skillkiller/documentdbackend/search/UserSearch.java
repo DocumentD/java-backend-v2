@@ -63,7 +63,6 @@ public class UserSearch {
         HttpResponse<List> request = Unirest.get(hostUrl + "/indexes/{index_uid}/documents")
                 .queryString("offset", offset)
                 .queryString("limit", limit)
-                .queryString("attributesToRetrieve", "userid,username,administrator")
                 .routeParam("index_uid", userIndexName)
                 .header("X-Meili-API-Key", privateApiKey)
                 .asObject(List.class);
