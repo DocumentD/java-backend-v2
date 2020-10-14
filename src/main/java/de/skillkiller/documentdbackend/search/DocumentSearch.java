@@ -215,6 +215,10 @@ public class DocumentSearch {
         meiliSearch.deleteMeiliDocument(documentIndexName, documentId);
     }
 
+    public void deleteDocumentBypassWriteLock(String documentId) {
+        meiliSearch.deleteMeiliDocumentBypassWriteLock(documentIndexName, documentId);
+    }
+
     public boolean hasAllUpdatesProcessed() {
         return meiliSearch.hasAllUpdatesProcessed(documentIndexName);
     }

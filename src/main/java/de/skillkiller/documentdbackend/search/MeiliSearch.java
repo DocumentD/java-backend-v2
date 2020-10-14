@@ -66,24 +66,33 @@ public class MeiliSearch {
 
     protected boolean createOrReplaceMeiliDocument(Object o, String primaryKey) throws TimeoutException, InterruptedException {
         databaseLockService.requestDoingWriteOperation();
+        boolean success = createOrReplaceMeiliDocumentBypassWriteLock(o, primaryKey);
+        databaseLockService.completeWriteOperation();
+        return success;
+    }
+
+    protected boolean createOrReplaceMeiliDocumentBypassWriteLock(Object o, String primaryKey) {
         HttpResponse request = Unirest.post(hostUrl + "/indexes/{index_uid}/documents")
                 .body(Collections.singletonList(o))
                 .routeParam("index_uid", primaryKey)
                 .header("X-Meili-API-Key", privateApiKey)
                 .asEmpty();
 
-        databaseLockService.completeWriteOperation();
         return request.getStatus() == 202;
     }
 
     protected void deleteMeiliDocument(String indexName, String id) throws TimeoutException, InterruptedException {
         databaseLockService.requestDoingWriteOperation();
+        deleteMeiliDocumentBypassWriteLock(indexName, id);
+        databaseLockService.completeWriteOperation();
+    }
+
+    protected void deleteMeiliDocumentBypassWriteLock(String indexName, String id) {
         Unirest.delete(hostUrl + "/indexes/{index_uid}/documents/{document_id}")
                 .routeParam("index_uid", indexName)
                 .routeParam("document_id", id)
                 .header("X-Meili-API-Key", privateApiKey)
                 .asEmptyAsync();
-        databaseLockService.completeWriteOperation();
     }
 
 }

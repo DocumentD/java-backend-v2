@@ -41,6 +41,11 @@ public class UserSearch {
         return meiliSearch.createOrReplaceMeiliDocument(user, userIndexName);
     }
 
+    public boolean createOrReplaceUserBypassWriteLock(User user) {
+        //TODO Check if username already exists
+        return meiliSearch.createOrReplaceMeiliDocumentBypassWriteLock(user, userIndexName);
+    }
+
     public boolean createUserIndex() throws TimeoutException, InterruptedException {
         boolean success = meiliSearch.createIndex(userIndexName, "userid");
 
