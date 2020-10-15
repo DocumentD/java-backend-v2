@@ -65,10 +65,19 @@ public class DocumentController {
                                              @RequestParam int pageNumber, @RequestParam int pageSize) {
         User authenticatedUser = ((UserDetailsHolder) authentication.getPrincipal()).getAuthenticatedUser();
         int offset = pageNumber * pageSize;
+        SearchResponse searchResponse = null;
         if (search.equals("")) {
-            return documentSearch.searchForTopDocumentsInUserScope(authenticatedUser.getId(), offset, pageSize);
+            searchResponse = documentSearch.searchForTopDocumentsInUserScope(authenticatedUser.getId(), offset, pageSize);
         }
-        return documentSearch.searchForDocumentInUserScope(authenticatedUser.getId(), search, offset, pageSize);
+
+        if (search.equals("all") || (search.equals("") && searchResponse.getNbHits() == 0)) {
+            searchResponse = documentSearch.getDocumentsAsSearchResponse(offset, pageSize);
+        }
+
+        if (searchResponse == null) {
+            searchResponse = documentSearch.searchForDocumentInUserScope(authenticatedUser.getId(), search, offset, pageSize);
+        }
+        return searchResponse;
     }
 
     @RequestMapping(value = "/upload", method = RequestMethod.POST)

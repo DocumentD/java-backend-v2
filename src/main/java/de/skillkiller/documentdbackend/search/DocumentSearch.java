@@ -201,6 +201,21 @@ public class DocumentSearch {
         return documents;
     }
 
+    public SearchResponse getDocumentsAsSearchResponse(int offset, int limit) {
+        SearchResponse searchResponse = new SearchResponse();
+        List<Document> documents = getDocuments(offset, limit);
+        List<Object> objects = new ArrayList<>(documents);
+        searchResponse.setHits(objects);
+
+        searchResponse.setLimit(limit);
+        searchResponse.setOffset(offset);
+        searchResponse.setProcessingTimeMs(10);
+        searchResponse.setQuery("");
+        searchResponse.setNbHits(meiliSearch.getStatisticsFromIndex(documentIndexName).getNumberOfDocuments());
+
+        return searchResponse;
+    }
+
     public Optional<Document> getDocumentByIdAndUserId(String documentId, String userId) {
         Optional<Document> optionalDocument = getDocumentById(documentId);
         if (optionalDocument.isPresent()) {

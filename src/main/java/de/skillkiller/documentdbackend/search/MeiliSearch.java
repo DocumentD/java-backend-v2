@@ -2,6 +2,7 @@ package de.skillkiller.documentdbackend.search;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.skillkiller.documentdbackend.entity.http.meilisearch.request.CreateIndexRequest;
+import de.skillkiller.documentdbackend.entity.http.meilisearch.response.StatsResponse;
 import de.skillkiller.documentdbackend.service.DatabaseLockService;
 import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
@@ -30,6 +31,15 @@ public class MeiliSearch {
         this.hostUrl = hostUrl;
         this.privateApiKey = privateApiKey;
         this.databaseLockService = databaseLockService;
+    }
+
+    protected StatsResponse getStatisticsFromIndex(String primaryKey) {
+        HttpResponse<StatsResponse> request = Unirest.get(hostUrl + "/indexes/{index_uid}/stats")
+                .routeParam("index_uid", primaryKey)
+                .header("X-Meili-API-Key", privateApiKey)
+                .asObject(StatsResponse.class);
+
+        return request.getBody();
     }
 
     protected boolean hasAllUpdatesProcessed(String primaryKey) {
