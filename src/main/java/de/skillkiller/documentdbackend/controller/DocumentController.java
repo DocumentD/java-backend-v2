@@ -119,10 +119,12 @@ public class DocumentController {
                 documentSearch.createOrReplaceDocument(document);
 
                 if (document.getTextContent() == null) {
-
                     executorService.execute(new PDFOCR(document, documentSearch, fileUtil, tesseractDataPath, tesseractLanguage));
                 }
+
                 logger.debug("Uploaded and created Document " + document.getId());
+                if (document.getCompany().equals("null"))
+                    document.setCompany(null); // Hide string "null" value in upload response
                 return ResponseEntity.ok(document);
             } catch (Exception e) {
                 logger.error("Something go wrong by upload", e);
