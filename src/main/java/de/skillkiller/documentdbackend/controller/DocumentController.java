@@ -116,7 +116,7 @@ public class DocumentController {
                 }
                 pdfDocument.close();
 
-                String fileName = document.getId() + "-" + multipartFile.getOriginalFilename();
+                String fileName = document.getId() + "-" + getAllowedFileName(multipartFile.getOriginalFilename());
                 if (!fileName.endsWith(".pdf")) fileName = fileName + ".pdf";
 
                 document.setFilename(fileName);
@@ -310,6 +310,20 @@ public class DocumentController {
                 } else return ResponseEntity.notFound().build();
             } else return ResponseEntity.notFound().build();
         } else return ResponseEntity.status(403).build();
+    }
+
+    private String getAllowedFileName(String filename) {
+        String allowedChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+        if (filename.endsWith(".pdf")) filename = filename.substring(0, filename.length() - 4);
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i = 0; i < filename.length(); i++) {
+            char charAt = filename.charAt(i);
+            if (allowedChars.contains(String.valueOf(charAt))) {
+                stringBuilder.append(charAt);
+            }
+        }
+
+        return stringBuilder.toString();
     }
 
 }
